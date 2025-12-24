@@ -150,7 +150,7 @@ jobs:
       - name: Trivy IaC Scan
         run: |
           echo "🔒 Running Trivy IaC scan..."
-          trivy config infrastructure-catalog infrastructure-live \
+          trivy config . \
             --format sarif \
             --output trivy-results.sarif \
             --exit-code 0 || true
