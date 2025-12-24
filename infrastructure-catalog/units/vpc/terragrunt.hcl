@@ -3,11 +3,11 @@ terraform {
 }
 
 inputs = {
-  name        = var.name
-  environment = var.environment
+  name        = stack.values.name
+  environment = stack.values.environment
 
   # VPC Configuration
-  cidr_block = var.cidr_block
+  cidr_block = stack.values.cidr_block
 
   # Auto-generate subnets based on available AZs (best practice)
   # Leave empty to auto-generate across all AZs
@@ -15,21 +15,21 @@ inputs = {
   private_subnet_cidrs = []
 
   # Database subnets (optional)
-  create_database_subnets = var.create_database_subnets
+  create_database_subnets = stack.values.create_database_subnets
   database_subnet_cidrs   = []
 
   # NAT Gateway configuration
-  enable_nat_gateway = var.enable_nat_gateway
-  single_nat_gateway = var.single_nat_gateway
+  enable_nat_gateway = true
+  single_nat_gateway = stack.values.single_nat_gateway
 
   # VPC Flow Logs
-  enable_flow_logs        = var.enable_flow_logs
-  flow_log_retention_days = var.flow_log_retention_days
+  enable_flow_logs        = true
+  flow_log_retention_days = 30
 
   # VPC Endpoints
-  enable_s3_endpoint       = var.enable_s3_endpoint
-  enable_dynamodb_endpoint = var.enable_dynamodb_endpoint
-  interface_vpc_endpoints  = var.interface_vpc_endpoints
+  enable_s3_endpoint       = stack.values.enable_s3_endpoint
+  enable_dynamodb_endpoint = false
+  interface_vpc_endpoints  = stack.values.interface_vpc_endpoints
 
   # Subnet tags for EKS
   public_subnet_tags = {
@@ -38,12 +38,12 @@ inputs = {
 
   private_subnet_tags = {
     "kubernetes.io/role/internal-elb" = "1"
-    "karpenter.sh/discovery"          = var.name
+    "karpenter.sh/discovery"          = stack.values.name
   }
 
   tags = {
     Project     = "FluxCD-Terragrunt-Stacks"
-    Environment = var.environment
+    Environment = stack.values.environment
     ManagedBy   = "OpenTofu"
     Stack       = "vpc"
   }
