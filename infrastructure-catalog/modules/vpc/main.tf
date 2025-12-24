@@ -104,12 +104,6 @@ resource "aws_subnet" "private" {
     }
   )
 }
-      Name = "${var.name}-private-${substr(data.aws_availability_zones.available.names[count.index % length(data.aws_availability_zones.available.names)], -1, 1)}"
-      Type = "private"
-      Tier = "private"
-    }
-  )
-}
 
 # Database Subnets (optional)
 resource "aws_subnet" "database" {
