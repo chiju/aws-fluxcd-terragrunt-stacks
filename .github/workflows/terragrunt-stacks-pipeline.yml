@@ -34,11 +34,6 @@ on:
     - '.github/workflows/**'
 
   push:
-    branches: 
-      - main
-      - 'feature/**'
-      - 'hotfix/**'
-      - 'release/**'
     paths:
     - 'infrastructure-live/**'
     - 'infrastructure-catalog/**'
