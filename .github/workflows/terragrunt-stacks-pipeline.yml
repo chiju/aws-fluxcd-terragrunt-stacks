@@ -499,11 +499,7 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ 
-            (github.event.inputs.environment == 'dev' && secrets.AWS_GITHUB_ROLE_ARN_DEV) ||
-            (github.event.inputs.environment == 'staging' && secrets.AWS_GITHUB_ROLE_ARN_STAGING) ||
-            (github.event.inputs.environment == 'prod' && secrets.AWS_GITHUB_ROLE_ARN_PROD)
-          }}
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Destroy Infrastructure
