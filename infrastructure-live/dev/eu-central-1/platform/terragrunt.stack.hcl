@@ -1,5 +1,5 @@
 unit "vpc" {
-  source = "${get_repo_root()}/infrastructure-catalog/modules/vpc"
+  source = "${get_repo_root()}/infrastructure-catalog/units/vpc"
   path   = "vpc"
 
   values = {
