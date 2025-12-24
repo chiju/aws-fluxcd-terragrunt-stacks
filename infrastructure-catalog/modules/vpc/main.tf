@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     aws = {
-      source = "hashicorp/aws"
+      source  = "hashicorp/aws"
       version = "6.27.0"
     }
   }
@@ -37,16 +37,16 @@ resource "aws_vpc" "main" {
 # Local values for dynamic subnet calculation
 locals {
   az_count = length(data.aws_availability_zones.available.names)
-  
+
   # Auto-generate subnet CIDRs if not provided
   public_subnet_cidrs = length(var.public_subnet_cidrs) > 0 ? var.public_subnet_cidrs : [
     for i in range(local.az_count) : cidrsubnet(var.cidr_block, 8, i + 1)
   ]
-  
+
   private_subnet_cidrs = length(var.private_subnet_cidrs) > 0 ? var.private_subnet_cidrs : [
     for i in range(local.az_count) : cidrsubnet(var.cidr_block, 8, i + 10)
   ]
-  
+
   database_subnet_cidrs = var.create_database_subnets ? (
     length(var.database_subnet_cidrs) > 0 ? var.database_subnet_cidrs : [
       for i in range(local.az_count) : cidrsubnet(var.cidr_block, 8, i + 20)

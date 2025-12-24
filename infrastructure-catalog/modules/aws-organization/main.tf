@@ -21,8 +21,8 @@ resource "aws_organizations_policy" "deny_root_user" {
     Version = "2012-10-17"
     Statement = [
       {
-        Effect = "Deny"
-        Action = "*"
+        Effect   = "Deny"
+        Action   = "*"
         Resource = "*"
         Condition = {
           StringEquals = {
