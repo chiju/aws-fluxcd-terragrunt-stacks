@@ -83,7 +83,9 @@ jobs:
 
       - name: Setup TFLint
         run: |
-          wget -O- https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
+          wget -O tflint.zip https://github.com/terraform-linters/tflint/releases/download/v${{ env.TFLINT_VERSION }}/tflint_linux_amd64.zip
+          unzip tflint.zip
+          sudo mv tflint /usr/local/bin/
           tflint --version
 
       - name: Setup Trivy
