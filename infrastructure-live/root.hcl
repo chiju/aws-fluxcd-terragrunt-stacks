@@ -8,7 +8,7 @@ locals {
   
   account_name = local.account_vars.locals.account_name
   account_id   = local.account_vars.locals.account_id
-  aws_region   = try(local.region_vars.locals.aws_region, "eu-central-1")
+  aws_region   = local.region_vars.locals.aws_region
 }
 
 # Remote state configuration - S3 backend with automatic bucket creation
