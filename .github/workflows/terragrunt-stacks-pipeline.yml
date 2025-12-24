@@ -500,9 +500,9 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ 
-            github.event.inputs.environment == 'dev' && secrets.AWS_GITHUB_ROLE_ARN_DEV ||
-            github.event.inputs.environment == 'staging' && secrets.AWS_GITHUB_ROLE_ARN_STAGING ||
-            github.event.inputs.environment == 'prod' && secrets.AWS_GITHUB_ROLE_ARN_PROD
+            (github.event.inputs.environment == 'dev' && secrets.AWS_GITHUB_ROLE_ARN_DEV) ||
+            (github.event.inputs.environment == 'staging' && secrets.AWS_GITHUB_ROLE_ARN_STAGING) ||
+            (github.event.inputs.environment == 'prod' && secrets.AWS_GITHUB_ROLE_ARN_PROD)
           }}
           aws-region: ${{ env.AWS_REGION }}
 
