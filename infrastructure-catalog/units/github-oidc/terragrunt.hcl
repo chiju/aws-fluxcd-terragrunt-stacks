@@ -7,7 +7,7 @@ terraform {
 }
 
 inputs = {
-  environment  = values.environment
-  github_repo  = values.github_repo
-  policy_arns  = try(values.policy_arns, ["arn:aws:iam::aws:policy/AdministratorAccess"])
+  environment = values.environment
+  github_repo = values.github_repo
+  policy_arns = try(values.policy_arns, ["arn:aws:iam::aws:policy/AdministratorAccess"])
 }

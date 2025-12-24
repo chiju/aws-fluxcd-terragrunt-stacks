@@ -8,10 +8,10 @@ terraform {
 
 dependency "ou" {
   config_path = values.ou_path
-  
+
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
   mock_outputs = {
-    id = "ou-root-wcum123456"  # Valid OU ID format
+    id = "ou-root-wcum123456" # Valid OU ID format
   }
 }
 

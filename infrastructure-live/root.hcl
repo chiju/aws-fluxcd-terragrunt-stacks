@@ -5,7 +5,7 @@ locals {
   # Parse account and region from path
   account_vars = read_terragrunt_config(find_in_parent_folders("account.hcl"))
   region_vars  = read_terragrunt_config(find_in_parent_folders("region.hcl", "account.hcl"))
-  
+
   account_name = local.account_vars.locals.account_name
   account_id   = local.account_vars.locals.account_id
   aws_region   = local.region_vars.locals.aws_region
@@ -14,12 +14,12 @@ locals {
 # Remote state configuration - S3 backend with automatic bucket creation
 remote_state {
   backend = "s3"
-  
+
   generate = {
     path      = "backend.tf"
     if_exists = "overwrite_terragrunt"
   }
-  
+
   config = {
     encrypt = true
     bucket  = "terragrunt-stacks-state-${local.account_name}-${local.aws_region}"
