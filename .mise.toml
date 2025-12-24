@@ -1,0 +1,15 @@
+# Tool versions - check for latest at:
+# Terragrunt: https://github.com/gruntwork-io/terragrunt/releases
+# OpenTofu: https://github.com/opentofu/opentofu/releases
+# kubectl: https://github.com/kubernetes/kubernetes/releases
+# Helm: https://github.com/helm/helm/releases
+# Flux: https://github.com/fluxcd/flux2/releases
+# AWS CLI: https://github.com/aws/aws-cli/releases
+
+[tools]
+terragrunt = "0.96.1"
+opentofu = "1.11.1"
+kubectl = "1.35.0"
+helm = "4.0.4"
+flux2 = "2.7.5"
+awscli = "2.32.23"
