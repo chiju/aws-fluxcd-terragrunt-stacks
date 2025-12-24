@@ -178,6 +178,9 @@ jobs:
     name: Validate Infrastructure
     runs-on: ubuntu-latest
     needs: [code-quality]
+    permissions:
+      id-token: write
+      contents: read
     strategy:
       matrix:
         # Temporarily only validate dev - uncomment others when ready
@@ -187,6 +190,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
