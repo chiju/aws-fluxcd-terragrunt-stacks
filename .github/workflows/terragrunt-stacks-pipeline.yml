@@ -144,8 +144,12 @@ jobs:
           checkov -d infrastructure-catalog -d infrastructure-live \
             --framework terraform \
             --output sarif \
-            --output-file-path checkov-results.sarif \
+            --output-file-path . \
             --soft-fail || true
+          # Rename the output file
+          if [ -f results_sarif.sarif ]; then
+            mv results_sarif.sarif checkov-results.sarif
+          fi
 
       - name: Trivy IaC Scan
         run: |
