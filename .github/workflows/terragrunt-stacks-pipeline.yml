@@ -159,13 +159,13 @@ jobs:
         run: ls -la *.sarif || echo "No SARIF files found"
 
       - name: Upload Security Results
-        if: false  # Temporarily disabled
+        if: always()  # Re-enabled
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: checkov-results.sarif
 
       - name: Upload Trivy Results
-        if: false  # Temporarily disabled
+        if: always()  # Re-enabled
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-results.sarif
