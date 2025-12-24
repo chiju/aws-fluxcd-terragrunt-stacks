@@ -118,7 +118,7 @@ jobs:
       - name: Terragrunt HCL Format Check
         run: |
           echo "🔍 Checking Terragrunt HCL formatting..."
-          find infrastructure-live -name "*.hcl" | xargs terragrunt hclfmt --check --diff
+          find infrastructure-live -name "*.hcl" | xargs terragrunt hcl format --check --diff
 
       - name: TFLint Security Scan
         run: |
