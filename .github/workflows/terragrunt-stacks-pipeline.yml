@@ -227,6 +227,8 @@ jobs:
           AWS_ACCOUNT_ID_PRODUCTION: ${{ secrets.AWS_ACCOUNT_ID_PRODUCTION }}
         run: |
           echo "✅ Validating Terragrunt stacks for ${{ matrix.environment }}..."
+          cd eu-central-1/platform
+          terragrunt stack validate
           find . -name "terragrunt.stack.hcl" -exec dirname {} \; | while read stack_dir; do
             echo "Validating stack: $stack_dir"
             cd "$stack_dir"
