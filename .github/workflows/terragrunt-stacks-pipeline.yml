@@ -34,9 +34,6 @@ on:
     - '.github/workflows/**'
 
   push:
-    paths:
-    - 'infrastructure-live/**'
-    - 'infrastructure-catalog/**'
 
 concurrency:
   group: infrastructure-${{ github.event.inputs.environment || 'pr' }}-${{ github.ref }}
