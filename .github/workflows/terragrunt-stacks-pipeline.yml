@@ -699,11 +699,9 @@ jobs:
   destroy:
     name: Destroy Infrastructure
     runs-on: ubuntu-latest
-    # Temporarily disabled - uncomment when needed
-    if: false
-    # if: |
-    #   github.event_name == 'workflow_dispatch' && 
-    #   github.event.inputs.action == 'destroy'
+    if: |
+      github.event_name == 'workflow_dispatch' && 
+      github.event.inputs.action == 'destroy'
     environment: ${{ github.event.inputs.environment }}-destroy
     
     steps:
