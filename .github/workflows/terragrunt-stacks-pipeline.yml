@@ -184,55 +184,52 @@ jobs:
             --json \
             --output=semgrep-results.json || true
           
-          # Convert JSON to SARIF using same method as other tools
-          python3 -c "
+          # Convert JSON to SARIF format
+          python3 << 'EOF'
 import json
-import sys
 
-# Create SARIF structure matching Checkov/Trivy format
 sarif = {
-    'version': '2.1.0',
-    'runs': [{
-        'tool': {
-            'driver': {
-                'name': 'semgrep',
-                'version': '1.0.0'
+    "version": "2.1.0",
+    "runs": [{
+        "tool": {
+            "driver": {
+                "name": "semgrep",
+                "version": "1.0.0"
             }
         },
-        'results': []
+        "results": []
     }]
 }
 
-# Load Semgrep JSON results if they exist
 try:
-    with open('semgrep-results.json', 'r') as f:
+    with open("semgrep-results.json", "r") as f:
         data = json.load(f)
     
-    if 'results' in data:
-        for result in data['results']:
+    if "results" in data:
+        for result in data["results"]:
             sarif_result = {
-                'ruleId': result.get('check_id', 'unknown'),
-                'message': {
-                    'text': result.get('extra', {}).get('message', 'Security issue detected')
+                "ruleId": result.get("check_id", "unknown"),
+                "message": {
+                    "text": result.get("extra", {}).get("message", "Security issue detected")
                 },
-                'locations': [{
-                    'physicalLocation': {
-                        'artifactLocation': {
-                            'uri': result.get('path', 'unknown')
+                "locations": [{
+                    "physicalLocation": {
+                        "artifactLocation": {
+                            "uri": result.get("path", "unknown")
                         },
-                        'region': {
-                            'startLine': result.get('start', {}).get('line', 1)
+                        "region": {
+                            "startLine": result.get("start", {}).get("line", 1)
                         }
                     }
                 }]
             }
-            sarif['runs'][0]['results'].append(sarif_result)
+            sarif["runs"][0]["results"].append(sarif_result)
 except:
     pass
 
-with open('semgrep-results.sarif', 'w') as f:
+with open("semgrep-results.sarif", "w") as f:
     json.dump(sarif, f, indent=2)
-"
+EOF
 
       - name: Cost Estimation
         env:
