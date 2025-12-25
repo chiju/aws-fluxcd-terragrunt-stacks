@@ -107,7 +107,7 @@ jobs:
         working-directory: infrastructure-live/dev
         run: |
           echo "🔍 Checking Terragrunt stack formatting..."
-          terragrunt stack fmt --check
+          terragrunt hcl fmt --check
 
   # ============================================================================
   # SECURITY SCANS
