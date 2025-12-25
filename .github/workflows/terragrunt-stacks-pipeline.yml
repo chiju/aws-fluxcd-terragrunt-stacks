@@ -132,12 +132,22 @@ jobs:
 
       - name: Setup TFSec
         run: |
-          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
-          sudo mv tfsec /usr/local/bin/
+          wget https://github.com/aquasecurity/tfsec/releases/download/v${{ env.TFSEC_VERSION }}/tfsec-linux-amd64
+          chmod +x tfsec-linux-amd64
+          sudo mv tfsec-linux-amd64 /usr/local/bin/tfsec
+
+      - name: Setup Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
 
       - name: Setup Terraform-docs
         run: |
-          curl -sSLo terraform-docs.tar.gz https://terraform-docs.io/dl/v0.17.0/terraform-docs-v0.17.0-$(uname)-amd64.tar.gz
+          curl -sSLo terraform-docs.tar.gz https://terraform-docs.io/dl/v${{ env.TERRAFORM_DOCS_VERSION }}/terraform-docs-v${{ env.TERRAFORM_DOCS_VERSION }}-$(uname)-amd64.tar.gz
           tar -xzf terraform-docs.tar.gz
           sudo mv terraform-docs /usr/local/bin/
 
