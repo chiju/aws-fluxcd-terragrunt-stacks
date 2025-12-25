@@ -274,7 +274,7 @@ resource "aws_cloudwatch_log_group" "vpc_flow_log" {
   retention_in_days = var.flow_log_retention_days
   # Security Fix: CKV_AWS_158 - Add KMS encryption for CloudWatch logs
   # This ensures log data is encrypted at rest using customer-managed keys
-  kms_key_id        = var.flow_log_kms_key_id
+  kms_key_id = var.flow_log_kms_key_id
 
   tags = merge(
     var.tags,
@@ -334,10 +334,10 @@ resource "aws_vpc_endpoint" "dynamodb" {
 resource "aws_vpc_endpoint" "interface_endpoints" {
   for_each = var.interface_vpc_endpoints
 
-  vpc_id              = aws_vpc.main.id
-  service_name        = "com.amazonaws.${data.aws_region.current.name}.${each.key}"
-  vpc_endpoint_type   = "Interface"
-  subnet_ids          = aws_subnet.private[*].id
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.${data.aws_region.current.name}.${each.key}"
+  vpc_endpoint_type = "Interface"
+  subnet_ids        = aws_subnet.private[*].id
   # Security Fix: CKV2_AWS_5 - Attach security group to VPC endpoints
   # This ensures VPC endpoints have proper network access controls
   security_group_ids  = [aws_security_group.vpc_endpoints[0].id]
