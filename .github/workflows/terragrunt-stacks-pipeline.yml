@@ -28,6 +28,9 @@ on:
   
   pull_request:
     branches: [main]
+  
+  schedule:
+    - cron: '0 6 * * 1-5'  # 6 AM weekdays - drift detection
     paths:
     - 'infrastructure-live/**'
     - 'infrastructure-catalog/**'
@@ -243,6 +246,58 @@ jobs:
           echo "✅ Validating Terragrunt stacks for ${{ matrix.environment }}..."
           cd eu-central-1/platform
           terragrunt stack validate
+
+  # ============================================================================
+  # DRIFT DETECTION JOB
+  # ============================================================================
+  
+  drift-detection:
+    name: "Infrastructure Drift Detection"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    permissions:
+      id-token: write
+      contents: read
+      issues: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terragrunt
+        run: |
+          wget -O terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.TERRAGRUNT_VERSION }}/terragrunt_linux_amd64
+          chmod +x terragrunt
+          sudo mv terragrunt /usr/local/bin/
+
+      - name: Check for Infrastructure Drift
+        run: |
+          cd infrastructure-live/dev/eu-central-1/platform
+          echo "🔍 Checking for infrastructure drift..."
+          
+          terragrunt stack plan -detailed-exitcode -no-color > drift-report.txt 2>&1
+          EXIT_CODE=$?
+          
+          if [ $EXIT_CODE -eq 2 ]; then
+            echo "🚨 DRIFT DETECTED!"
+            gh issue create \
+              --title "🚨 Infrastructure Drift Detected - $(date +%Y-%m-%d)" \
+              --body "$(cat drift-report.txt)" \
+              --label "drift,infrastructure,urgent"
+          elif [ $EXIT_CODE -eq 0 ]; then
+            echo "✅ No drift detected"
+          else
+            echo "❌ Error running drift detection"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           find . -name "terragrunt.stack.hcl" -exec dirname {} \; | while read stack_dir; do
             echo "Validating stack: $stack_dir"
             cd "$stack_dir"
