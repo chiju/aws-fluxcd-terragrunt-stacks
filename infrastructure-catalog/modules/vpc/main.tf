@@ -293,7 +293,7 @@ resource "aws_vpc_endpoint" "s3" {
   count = var.enable_s3_endpoint ? 1 : 0
 
   vpc_id            = aws_vpc.main.id
-  service_name      = "com.amazonaws.${data.aws_region.current.name}.s3"
+  service_name      = "com.amazonaws.${data.aws_region.current.id}.s3"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = concat(aws_route_table.private[*].id, [aws_route_table.public.id])
 
@@ -309,7 +309,7 @@ resource "aws_vpc_endpoint" "dynamodb" {
   count = var.enable_dynamodb_endpoint ? 1 : 0
 
   vpc_id            = aws_vpc.main.id
-  service_name      = "com.amazonaws.${data.aws_region.current.name}.dynamodb"
+  service_name      = "com.amazonaws.${data.aws_region.current.id}.dynamodb"
   vpc_endpoint_type = "Gateway"
   route_table_ids   = concat(aws_route_table.private[*].id, [aws_route_table.public.id])
 
@@ -326,7 +326,7 @@ resource "aws_vpc_endpoint" "interface_endpoints" {
   for_each = var.interface_vpc_endpoints
 
   vpc_id            = aws_vpc.main.id
-  service_name      = "com.amazonaws.${data.aws_region.current.name}.${each.key}"
+  service_name      = "com.amazonaws.${data.aws_region.current.id}.${each.key}"
   vpc_endpoint_type = "Interface"
   subnet_ids        = aws_subnet.private[*].id
   # Security Fix: CKV2_AWS_5 - Attach security group to VPC endpoints
