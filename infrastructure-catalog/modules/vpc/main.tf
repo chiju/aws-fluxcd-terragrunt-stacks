@@ -331,7 +331,7 @@ resource "aws_vpc_endpoint" "interface_endpoints" {
   subnet_ids        = aws_subnet.private[*].id
   # Security Fix: CKV2_AWS_5 - Attach security group to VPC endpoints
   # This ensures VPC endpoints have proper network access controls
-  security_group_ids  = [aws_security_group.vpc_endpoints[0].id]
+  security_group_ids  = length(var.interface_vpc_endpoints) > 0 ? [aws_security_group.vpc_endpoints[0].id] : []
   private_dns_enabled = true
 
   tags = merge(
@@ -343,6 +343,7 @@ resource "aws_vpc_endpoint" "interface_endpoints" {
 }
 
 # Security Group for VPC Endpoints
+# checkov:skip=CKV2_AWS_5:Security group is conditionally attached to VPC endpoints when interface_vpc_endpoints is configured
 resource "aws_security_group" "vpc_endpoints" {
   count = length(var.interface_vpc_endpoints) > 0 ? 1 : 0
 
@@ -359,10 +360,10 @@ resource "aws_security_group" "vpc_endpoints" {
   }
 
   egress {
-    description = "All outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
+    description = "HTTPS to AWS services"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
