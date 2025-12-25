@@ -117,6 +117,9 @@ jobs:
   security-scan:
     name: Security Scans
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     
     steps:
       - name: Checkout
