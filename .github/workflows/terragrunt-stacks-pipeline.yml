@@ -181,13 +181,58 @@ jobs:
         run: |
           echo "🔒 Running Semgrep security scan..."
           semgrep --config=p/security-audit --config=p/secrets infrastructure-catalog \
-            --sarif \
-            --output=semgrep-results.sarif || true
+            --json \
+            --output=semgrep-results.json || true
           
-          # Create empty SARIF if no file exists
-          if [ ! -f "semgrep-results.sarif" ]; then
-            echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"semgrep"}},"results":[]}]}' > semgrep-results.sarif
-          fi
+          # Convert JSON to SARIF using same method as other tools
+          python3 -c "
+import json
+import sys
+
+# Create SARIF structure matching Checkov/Trivy format
+sarif = {
+    'version': '2.1.0',
+    'runs': [{
+        'tool': {
+            'driver': {
+                'name': 'semgrep',
+                'version': '1.0.0'
+            }
+        },
+        'results': []
+    }]
+}
+
+# Load Semgrep JSON results if they exist
+try:
+    with open('semgrep-results.json', 'r') as f:
+        data = json.load(f)
+    
+    if 'results' in data:
+        for result in data['results']:
+            sarif_result = {
+                'ruleId': result.get('check_id', 'unknown'),
+                'message': {
+                    'text': result.get('extra', {}).get('message', 'Security issue detected')
+                },
+                'locations': [{
+                    'physicalLocation': {
+                        'artifactLocation': {
+                            'uri': result.get('path', 'unknown')
+                        },
+                        'region': {
+                            'startLine': result.get('start', {}).get('line', 1)
+                        }
+                    }
+                }]
+            }
+            sarif['runs'][0]['results'].append(sarif_result)
+except:
+    pass
+
+with open('semgrep-results.sarif', 'w') as f:
+    json.dump(sarif, f, indent=2)
+"
 
       - name: Cost Estimation
         env:
