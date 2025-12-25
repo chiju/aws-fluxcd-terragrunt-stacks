@@ -164,8 +164,9 @@ jobs:
             echo "Scanning $dir with AWS ruleset"
             cd "$dir"
             tflint --init
-            tflint --enable-rule=terraform_required_providers
-            tflint --enable-rule=terraform_required_version
+            # Skip terraform_required_providers and terraform_required_version for Terragrunt modules
+            # These are handled by Terragrunt's root.hcl generate blocks
+            tflint --disable-rule=terraform_required_providers --disable-rule=terraform_required_version
             cd - > /dev/null
           done
 
