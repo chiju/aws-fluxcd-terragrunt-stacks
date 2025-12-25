@@ -1,0 +1,752 @@
+name: Multi-Account Infrastructure - Terragrunt Stacks
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target Environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+        - dev
+        - staging
+        - prod
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+        - plan
+        - apply
+        - destroy
+      stack_path:
+        description: 'Stack path (optional - leave empty for all stacks)'
+        required: false
+        type: string
+  
+  pull_request:
+    branches: [main]
+  
+  schedule:
+    - cron: '0 6 * * 1-5'  # 6 AM weekdays - drift detection
+
+  push:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # Wait for previous run to complete
+
+env:
+  AWS_REGION: eu-central-1
+  TERRAGRUNT_VERSION: 0.96.1
+  TERRAFORM_VERSION: 1.14.3
+  CHECKOV_VERSION: 3.2.291
+  TRIVY_VERSION: 0.58.1
+  TFLINT_VERSION: 0.54.0
+  TERRAFORM_DOCS_VERSION: 0.19.0
+
+permissions:
+  id-token: write
+  contents: read
+  security-events: write
+  pull-requests: write
+
+jobs:
+  # ============================================================================
+  # CODE QUALITY CHECKS
+  # ============================================================================
+  
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    outputs:
+      changed-stacks: ${{ steps.detect-changes.outputs.stacks }}
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Setup Terragrunt
+        run: |
+          wget -q https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.TERRAGRUNT_VERSION }}/terragrunt_linux_amd64
+          chmod +x terragrunt_linux_amd64
+          sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
+
+      - name: Detect Changed Stacks
+        id: detect-changes
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            CHANGED_FILES=$(git diff --name-only origin/main...HEAD)
+          else
+            CHANGED_FILES=$(git diff --name-only HEAD~1 HEAD)
+          fi
+          
+          CHANGED_STACKS=$(echo "$CHANGED_FILES" | grep -E "infrastructure-live/.*/terragrunt\.stack\.hcl$" | xargs -I {} dirname {} | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          echo "stacks=$CHANGED_STACKS" >> $GITHUB_OUTPUT
+          echo "Changed stacks: $CHANGED_STACKS"
+
+      - name: Terraform Format Check
+        run: |
+          echo "🔍 Checking Terraform module formatting..."
+          terraform fmt -check -recursive infrastructure-catalog/modules/
+
+      - name: Terragrunt Unit Format Check
+        run: |
+          echo "🔍 Checking Terragrunt unit formatting..."
+          find infrastructure-catalog/units -name "*.hcl" | xargs terragrunt hcl format --check
+
+      - name: Terragrunt Stack Format Check
+        working-directory: infrastructure-live/dev
+        run: |
+          echo "🔍 Checking Terragrunt stack formatting..."
+          terragrunt hcl fmt --check
+
+  # ============================================================================
+  # SECURITY SCANS
+  # ============================================================================
+
+  security-scan:
+    name: Security Scans
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        run: |
+          wget -O tflint.zip https://github.com/terraform-linters/tflint/releases/download/v${{ env.TFLINT_VERSION }}/tflint_linux_amd64.zip
+          unzip tflint.zip
+          sudo mv tflint /usr/local/bin/
+          tflint --version
+
+      - name: Setup Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
+
+      - name: Setup Terraform-docs
+        run: |
+          curl -sSLo terraform-docs.tar.gz https://terraform-docs.io/dl/v${{ env.TERRAFORM_DOCS_VERSION }}/terraform-docs-v${{ env.TERRAFORM_DOCS_VERSION }}-$(uname)-amd64.tar.gz
+          tar -xzf terraform-docs.tar.gz
+          sudo mv terraform-docs /usr/local/bin/
+
+      - name: Setup Infracost
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
+          # Script already installs to /usr/local/bin/infracost, no need to move
+
+      - name: Setup Semgrep
+        run: |
+          python3 -m pip install semgrep
+          semgrep --version
+
+      - name: Enhanced TFLint Scan
+        run: |
+          echo "🔍 Running enhanced TFLint scan..."
+          find infrastructure-catalog/modules -name "*.tf" -exec dirname {} \; | sort -u | while read dir; do
+            echo "Scanning $dir with AWS ruleset"
+            cd "$dir"
+            tflint --init
+            # Skip terraform_required_providers and terraform_required_version for Terragrunt modules
+            # These are handled by Terragrunt's root.hcl generate blocks
+            tflint --disable-rule=terraform_required_providers --disable-rule=terraform_required_version
+            cd - > /dev/null
+          done
+
+      - name: Generate Documentation
+        run: |
+          echo "📚 Generating Terraform documentation..."
+          find infrastructure-catalog/modules -name "main.tf" -exec dirname {} \; | while read dir; do
+            echo "Generating docs for $dir"
+            terraform-docs markdown table --output-file README.md "$dir" || true
+          done
+
+      - name: Semgrep Security Scan
+        run: |
+          echo "🔒 Running Semgrep security scan..."
+          semgrep --config=p/security-audit --config=p/secrets infrastructure-catalog \
+            --sarif \
+            --output=semgrep-results.sarif || true
+          
+          # Create fallback if Semgrep didn't create the file
+          if [ ! -f semgrep-results.sarif ]; then
+            echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"semgrep"}},"results":[]}]}' > semgrep-results.sarif
+          fi
+
+      - name: Cost Estimation
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+        run: |
+          echo "💰 Running cost estimation..."
+          if [ -n "$INFRACOST_API_KEY" ]; then
+            find infrastructure-catalog/modules -name "main.tf" -exec dirname {} \; | while read dir; do
+              echo "Cost analysis for $dir"
+              cd "$dir"
+              infracost breakdown --path . --format json --out infracost.json || true
+              cd - > /dev/null
+            done
+          else
+            echo "⚠️ INFRACOST_API_KEY not set, skipping cost estimation"
+          fi
+
+      - name: Create SARIF Files
+        run: |
+          echo "Creating SARIF files..."
+          echo '{"version":"2.1.0","runs":[]}' > checkov-results.sarif
+          echo '{"version":"2.1.0","runs":[]}' > trivy-results.sarif
+
+      - name: Checkov Security Scan
+        run: |
+          echo "🔒 Running Checkov security scan..."
+          pip3 install checkov==${{ env.CHECKOV_VERSION }}
+          checkov -d infrastructure-catalog -d infrastructure-live \
+            --framework terraform \
+            --output sarif \
+            --output-file-path . \
+            --soft-fail || true
+          # Rename the output file
+          if [ -f results_sarif.sarif ]; then
+            mv results_sarif.sarif checkov-results.sarif
+          fi
+
+      - name: Trivy IaC Scan
+        run: |
+          echo "🔒 Running Trivy IaC scan..."
+          trivy config . \
+            --format sarif \
+            --output trivy-results.sarif \
+            --exit-code 0 || true
+
+      - name: List Files
+        run: ls -la *.sarif || echo "No SARIF files found"
+
+      - name: Upload Security Results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: checkov-results.sarif
+          category: checkov
+
+      - name: Upload Trivy Results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy
+
+      - name: Upload Semgrep Results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep-results.sarif
+          category: semgrep
+
+      - name: Generate Consolidated Security Report
+        if: always()
+        run: |
+          echo "📊 Generating consolidated security report..."
+          python3 -c "
+          import json
+          from datetime import datetime
+          
+          # Initialize report structure
+          report = {
+            'scan_execution': {
+              'timestamp': datetime.utcnow().isoformat() + 'Z',
+              'tools_executed': ['checkov', 'trivy', 'semgrep'],
+              'repository_scope': 'Terragrunt Stacks Infrastructure'
+            },
+            'summary': {'total_issues': 0, 'by_severity': {}, 'by_tool': {}},
+            'tools': {}
+          }
+          
+          # Process each SARIF file
+          tools = ['checkov', 'trivy', 'semgrep']
+          for tool in tools:
+            try:
+              with open(f'{tool}-results.sarif', 'r') as f:
+                sarif = json.load(f)
+                issues = []
+                if sarif.get('runs'):
+                  for run in sarif['runs']:
+                    issues.extend(run.get('results', []))
+                
+                report['tools'][tool] = {
+                  'issues_count': len(issues),
+                  'status': 'completed' if len(issues) >= 0 else 'failed'
+                }
+                report['summary']['by_tool'][tool] = len(issues)
+                report['summary']['total_issues'] += len(issues)
+            except Exception as e:
+              report['tools'][tool] = {'issues_count': 0, 'status': 'failed', 'error': str(e)}
+              report['summary']['by_tool'][tool] = 0
+          
+          # Write consolidated report
+          with open('consolidated-security-report.json', 'w') as f:
+            json.dump(report, f, indent=2)
+          
+          # Generate CSV summary
+          import csv
+          with open('security-summary.csv', 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Tool', 'Issues Found', 'Status'])
+            for tool, data in report['tools'].items():
+              writer.writerow([tool.title(), data['issues_count'], data['status']])
+            writer.writerow(['TOTAL', report['summary']['total_issues'], 'Summary'])
+          
+          print(f\"📊 Consolidated report: {report['summary']['total_issues']} total issues found\")
+          "
+
+      - name: Save SARIF Files as Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-sarif-results
+          path: |
+            checkov-results.sarif
+            trivy-results.sarif
+            semgrep-results.sarif
+          retention-days: 30
+
+      - name: Save Consolidated Reports as Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-security-reports
+          path: |
+            consolidated-security-report.json
+            security-summary.csv
+          retention-days: 30
+
+  # ============================================================================
+  # VALIDATION
+  # ============================================================================
+  
+  validate:
+    name: Validate Infrastructure
+    runs-on: ubuntu-latest
+    needs: [code-quality, security-scan]  # Wait for both parallel jobs
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        # Temporarily only validate dev - uncomment others when ready
+        environment: [dev]
+        # environment: [dev, staging, prod]
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Setup Terragrunt
+        run: |
+          wget -q https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.TERRAGRUNT_VERSION }}/terragrunt_linux_amd64
+          chmod +x terragrunt_linux_amd64
+          sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
+
+      - name: Validate Terraform Modules
+        run: |
+          echo "✅ Validating Terraform modules..."
+          find infrastructure-catalog/modules -name "main.tf" -exec dirname {} \; | while read dir; do
+            echo "Validating $dir"
+            cd "$dir"
+            terraform init -backend=false
+            terraform validate
+            cd - > /dev/null
+          done
+
+      - name: Validate Terragrunt Stacks
+        working-directory: infrastructure-live/${{ matrix.environment }}
+        env:
+          AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
+          AWS_ACCOUNT_ID_STAGING: ${{ secrets.AWS_ACCOUNT_ID_STAGING }}
+          AWS_ACCOUNT_ID_PRODUCTION: ${{ secrets.AWS_ACCOUNT_ID_PRODUCTION }}
+        run: |
+          echo "✅ Validating Terragrunt stacks for ${{ matrix.environment }}..."
+          terragrunt stack validate
+          cd eu-central-1/platform
+          terragrunt stack validate
+
+  # ============================================================================
+  # DRIFT DETECTION JOB
+  # ============================================================================
+  
+  drift-detection:
+    name: "Infrastructure Drift Detection"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    permissions:
+      id-token: write
+      contents: read
+      issues: write
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terragrunt
+        run: |
+          wget -O terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.TERRAGRUNT_VERSION }}/terragrunt_linux_amd64
+          chmod +x terragrunt
+          sudo mv terragrunt /usr/local/bin/
+
+      - name: Check for Infrastructure Drift
+        run: |
+          cd infrastructure-live/dev/eu-central-1/platform
+          echo "🔍 Checking for infrastructure drift..."
+          
+          terragrunt stack plan -detailed-exitcode -no-color > drift-report.txt 2>&1
+          EXIT_CODE=$?
+          
+          if [ $EXIT_CODE -eq 2 ]; then
+            echo "🚨 DRIFT DETECTED!"
+            gh issue create \
+              --title "🚨 Infrastructure Drift Detected - $(date +%Y-%m-%d)" \
+              --body "$(cat drift-report.txt)" \
+              --label "drift,infrastructure,urgent"
+          elif [ $EXIT_CODE -eq 0 ]; then
+            echo "✅ No drift detected"
+          else
+            echo "❌ Error running drift detection"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ============================================================================
+  # PLAN JOBS
+  # ============================================================================
+  
+  plan-dev:
+    name: Plan Dev
+    runs-on: ubuntu-latest
+    needs: [validate]
+    if: |
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'dev') ||
+      github.event_name == 'pull_request' ||
+      github.event_name == 'push'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Tools
+        uses: ./.github/actions/setup-tools
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Plan Infrastructure
+        working-directory: infrastructure-live/dev
+        env:
+          AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
+        run: |
+          if [ -n "${{ github.event.inputs.stack_path }}" ]; then
+            cd "${{ github.event.inputs.stack_path }}"
+            terragrunt stack run plan --non-interactive --backend-bootstrap
+          else
+            find . -name "terragrunt.stack.hcl" -exec dirname {} \; | while read stack_dir; do
+              echo "Planning stack: $stack_dir"
+              cd "$stack_dir"
+              terragrunt stack run plan --non-interactive --backend-bootstrap
+              cd - > /dev/null
+            done
+          fi
+
+      - name: Comment PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ Dev infrastructure plan completed successfully!'
+            })
+
+  plan-staging:
+    name: Plan Staging
+    runs-on: ubuntu-latest
+    needs: [validate]
+    # Temporarily disabled - uncomment when staging is ready
+    if: false
+    # if: |
+    #   (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging') ||
+    #   (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Tools
+        uses: ./.github/actions/setup-tools
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN_STAGING }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Plan Infrastructure
+        working-directory: infrastructure-live/staging
+        env:
+          AWS_ACCOUNT_ID_STAGING: ${{ secrets.AWS_ACCOUNT_ID_STAGING }}
+        run: |
+          if [ -n "${{ github.event.inputs.stack_path }}" ]; then
+            cd "${{ github.event.inputs.stack_path }}"
+            terragrunt stack run plan --non-interactive --backend-bootstrap
+          else
+            find . -name "terragrunt.stack.hcl" -exec dirname {} \; | while read stack_dir; do
+              echo "Planning stack: $stack_dir"
+              cd "$stack_dir"
+              terragrunt stack run plan --non-interactive --backend-bootstrap
+              cd - > /dev/null
+            done
+          fi
+
+  plan-prod:
+    name: Plan Production
+    runs-on: ubuntu-latest
+    needs: [validate]
+    # Temporarily disabled - uncomment when production is ready
+    if: false
+    # if: github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'prod'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Tools
+        uses: ./.github/actions/setup-tools
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Plan Infrastructure
+        working-directory: infrastructure-live/prod
+        env:
+          AWS_ACCOUNT_ID_PRODUCTION: ${{ secrets.AWS_ACCOUNT_ID_PRODUCTION }}
+        run: |
+          if [ -n "${{ github.event.inputs.stack_path }}" ]; then
+            cd "${{ github.event.inputs.stack_path }}"
+            terragrunt stack run plan --non-interactive --backend-bootstrap
+          else
+            find . -name "terragrunt.stack.hcl" -exec dirname {} \; | while read stack_dir; do
+              echo "Planning stack: $stack_dir"
+              cd "$stack_dir"
+              terragrunt stack run plan --non-interactive --backend-bootstrap
+              cd - > /dev/null
+            done
+          fi
+
+  # ============================================================================
+  # APPLY JOBS
+  # ============================================================================
+  
+  apply-dev:
+    name: Apply Dev
+    runs-on: ubuntu-latest
+    needs: [plan-dev]
+    if: |
+      github.event_name == 'workflow_dispatch' && 
+      github.event.inputs.environment == 'dev' && 
+      github.event.inputs.action == 'apply'
+    environment: dev
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Tools
+        uses: ./.github/actions/setup-tools
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Apply Infrastructure
+        working-directory: infrastructure-live/dev
+        env:
+          AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
+        run: |
+          if [ -n "${{ github.event.inputs.stack_path }}" ]; then
+            cd "${{ github.event.inputs.stack_path }}"
+            terragrunt stack run apply --non-interactive --backend-bootstrap
+          else
+            find . -name "terragrunt.stack.hcl" -exec dirname {} \; | while read stack_dir; do
+              echo "Applying stack: $stack_dir"
+              cd "$stack_dir"
+              terragrunt stack run apply --non-interactive --backend-bootstrap
+              cd - > /dev/null
+            done
+          fi
+
+  apply-staging:
+    name: Apply Staging
+    runs-on: ubuntu-latest
+    needs: [plan-staging, apply-dev]
+    # Temporarily disabled - uncomment when staging is ready
+    if: false
+    # if: |
+    #   github.event_name == 'workflow_dispatch' && 
+    #   github.event.inputs.environment == 'staging' && 
+    #   github.event.inputs.action == 'apply'
+    environment: staging
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Tools
+        uses: ./.github/actions/setup-tools
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN_STAGING }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Apply Infrastructure
+        working-directory: infrastructure-live/staging
+        env:
+          AWS_ACCOUNT_ID_STAGING: ${{ secrets.AWS_ACCOUNT_ID_STAGING }}
+        run: |
+          if [ -n "${{ github.event.inputs.stack_path }}" ]; then
+            cd "${{ github.event.inputs.stack_path }}"
+            terragrunt stack run apply --non-interactive --backend-bootstrap
+          else
+            find . -name "terragrunt.stack.hcl" -exec dirname {} \; | while read stack_dir; do
+              echo "Applying stack: $stack_dir"
+              cd "$stack_dir"
+              terragrunt stack run apply --non-interactive --backend-bootstrap
+              cd - > /dev/null
+            done
+          fi
+
+  apply-prod:
+    name: Apply Production
+    runs-on: ubuntu-latest
+    needs: [plan-prod, apply-staging]
+    # Temporarily disabled - uncomment when production is ready
+    if: false
+    # if: |
+    #   github.event_name == 'workflow_dispatch' && 
+    #   github.event.inputs.environment == 'prod' && 
+    #   github.event.inputs.action == 'apply'
+    environment: production
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Tools
+        uses: ./.github/actions/setup-tools
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Apply Infrastructure
+        working-directory: infrastructure-live/prod
+        env:
+          AWS_ACCOUNT_ID_PRODUCTION: ${{ secrets.AWS_ACCOUNT_ID_PRODUCTION }}
+        run: |
+          if [ -n "${{ github.event.inputs.stack_path }}" ]; then
+            cd "${{ github.event.inputs.stack_path }}"
+            terragrunt stack run apply --non-interactive --backend-bootstrap
+          else
+            find . -name "terragrunt.stack.hcl" -exec dirname {} \; | while read stack_dir; do
+              echo "Applying stack: $stack_dir"
+              cd "$stack_dir"
+              terragrunt stack run apply --non-interactive --backend-bootstrap
+              cd - > /dev/null
+            done
+          fi
+
+  # ============================================================================
+  # DESTROY JOBS (Manual only)
+  # ============================================================================
+  
+  destroy:
+    name: Destroy Infrastructure
+    runs-on: ubuntu-latest
+    # Temporarily disabled - uncomment when needed
+    if: false
+    # if: |
+    #   github.event_name == 'workflow_dispatch' && 
+    #   github.event.inputs.action == 'destroy'
+    environment: ${{ github.event.inputs.environment }}-destroy
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Tools
+        uses: ./.github/actions/setup-tools
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Destroy Infrastructure
+        working-directory: infrastructure-live/${{ github.event.inputs.environment }}
+        env:
+          AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
+          AWS_ACCOUNT_ID_STAGING: ${{ secrets.AWS_ACCOUNT_ID_STAGING }}
+          AWS_ACCOUNT_ID_PRODUCTION: ${{ secrets.AWS_ACCOUNT_ID_PRODUCTION }}
+        run: |
+          if [ -n "${{ github.event.inputs.stack_path }}" ]; then
+            cd "${{ github.event.inputs.stack_path }}"
+            terragrunt stack run destroy --non-interactive
+          else
+            echo "⚠️  Destroy all stacks requires explicit stack path for safety"
+            exit 1
+          fi

@@ -8,5 +8,5 @@ terraform {
 
 inputs = {
   organization_name = values.organization_name
-  feature_set      = values.feature_set
+  feature_set       = values.feature_set
 }
