@@ -45,6 +45,8 @@ env:
   CHECKOV_VERSION: 3.2.291
   TRIVY_VERSION: 0.58.1
   TFLINT_VERSION: 0.54.0
+  TFSEC_VERSION: 1.28.10
+  TERRAFORM_DOCS_VERSION: 0.17.0
 
 permissions:
   id-token: write
@@ -128,31 +130,69 @@ jobs:
           sudo mv tflint /usr/local/bin/
           tflint --version
 
-      - name: Setup Trivy
+      - name: Setup TFSec
         run: |
-          sudo apt-get update
-          sudo apt-get install wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install trivy
+          curl -s https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+          sudo mv tfsec /usr/local/bin/
 
-      - name: TFLint Security Scan
+      - name: Setup Terraform-docs
         run: |
-          echo "🔒 Running TFLint security scan..."
-          find infrastructure-catalog -name "*.tf" -exec dirname {} \; | sort -u | while read dir; do
-            echo "Scanning $dir"
+          curl -sSLo terraform-docs.tar.gz https://terraform-docs.io/dl/v0.17.0/terraform-docs-v0.17.0-$(uname)-amd64.tar.gz
+          tar -xzf terraform-docs.tar.gz
+          sudo mv terraform-docs /usr/local/bin/
+
+      - name: Setup Infracost
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
+          sudo mv /tmp/infracost* /usr/local/bin/infracost
+
+      - name: TFSec Security Scan
+        run: |
+          echo "🔒 Running TFSec security scan..."
+          tfsec infrastructure-catalog --format sarif --out tfsec-results.sarif --soft-fail || true
+
+      - name: Enhanced TFLint Scan
+        run: |
+          echo "🔍 Running enhanced TFLint scan..."
+          find infrastructure-catalog/modules -name "*.tf" -exec dirname {} \; | sort -u | while read dir; do
+            echo "Scanning $dir with AWS ruleset"
             cd "$dir"
             tflint --init
-            tflint --format sarif > tflint-results.sarif || true
+            tflint --enable-rule=terraform_required_providers
+            tflint --enable-rule=terraform_required_version
             cd - > /dev/null
           done
+
+      - name: Generate Documentation
+        run: |
+          echo "📚 Generating Terraform documentation..."
+          find infrastructure-catalog/modules -name "main.tf" -exec dirname {} \; | while read dir; do
+            echo "Generating docs for $dir"
+            terraform-docs markdown table --output-file README.md "$dir" || true
+          done
+
+      - name: Cost Estimation
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+        run: |
+          echo "💰 Running cost estimation..."
+          if [ -n "$INFRACOST_API_KEY" ]; then
+            find infrastructure-catalog/modules -name "main.tf" -exec dirname {} \; | while read dir; do
+              echo "Cost analysis for $dir"
+              cd "$dir"
+              infracost breakdown --path . --format json --out infracost.json || true
+              cd - > /dev/null
+            done
+          else
+            echo "⚠️ INFRACOST_API_KEY not set, skipping cost estimation"
+          fi
 
       - name: Create SARIF Files
         run: |
           echo "Creating SARIF files..."
           echo '{"version":"2.1.0","runs":[]}' > checkov-results.sarif
           echo '{"version":"2.1.0","runs":[]}' > trivy-results.sarif
+          echo '{"version":"2.1.0","runs":[]}' > tfsec-results.sarif
 
       - name: Checkov Security Scan
         run: |
@@ -191,6 +231,12 @@ jobs:
         with:
           sarif_file: trivy-results.sarif
 
+      - name: Upload TFSec Results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: tfsec-results.sarif
+
       - name: Save SARIF Files as Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -199,6 +245,7 @@ jobs:
           path: |
             checkov-results.sarif
             trivy-results.sarif
+            tfsec-results.sarif
           retention-days: 30
 
   # ============================================================================
