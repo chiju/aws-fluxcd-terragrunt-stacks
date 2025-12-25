@@ -154,7 +154,7 @@ jobs:
       - name: Setup Infracost
         run: |
           curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
-          sudo mv /tmp/infracost* /usr/local/bin/infracost
+          # Script already installs to /usr/local/bin/infracost, no need to move
 
       - name: Setup Semgrep
         run: |
