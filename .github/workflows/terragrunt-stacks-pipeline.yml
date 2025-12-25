@@ -183,23 +183,7 @@ jobs:
           # Check if SARIF file exists and has reasonable content
           if [ ! -f "semgrep-results.sarif" ] || [ $(wc -c < semgrep-results.sarif) -lt 100 ]; then
             echo "Creating minimal valid SARIF file"
-            cat > semgrep-results.sarif << 'EOF'
-{
-  "version": "2.1.0",
-  "runs": [
-    {
-      "tool": {
-        "driver": {
-          "name": "semgrep",
-          "version": "1.0.0",
-          "informationUri": "https://semgrep.dev"
-        }
-      },
-      "results": []
-    }
-  ]
-}
-EOF
+            echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"semgrep","version":"1.0.0","informationUri":"https://semgrep.dev"}},"results":[]}]}' > semgrep-results.sarif
           fi
           
           echo "SARIF file size: $(wc -c < semgrep-results.sarif) bytes"
