@@ -35,8 +35,8 @@ on:
   push:
 
 concurrency:
-  group: infrastructure-${{ github.event.inputs.environment || 'pr' }}-${{ github.ref }}
-  cancel-in-progress: false
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false  # Wait for previous run to complete
 
 env:
   AWS_REGION: eu-central-1
@@ -97,6 +97,11 @@ jobs:
         run: |
           echo "🔍 Checking Terraform module formatting..."
           terraform fmt -check -recursive infrastructure-catalog/modules/
+
+      - name: Terragrunt Unit Format Check
+        run: |
+          echo "🔍 Checking Terragrunt unit formatting..."
+          find infrastructure-catalog/units -name "*.hcl" | xargs terragrunt hcl format --check
 
       - name: Terragrunt Stack Format Check
         working-directory: infrastructure-live/dev
