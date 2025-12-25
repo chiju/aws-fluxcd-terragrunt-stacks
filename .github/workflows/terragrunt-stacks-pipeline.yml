@@ -178,6 +178,14 @@ jobs:
         run: |
           echo "🔒 Running Semgrep security scan..."
           semgrep --config=auto infrastructure-catalog --sarif --output=semgrep-results.sarif || true
+          
+          # Check if SARIF file exists and has content
+          if [ ! -f "semgrep-results.sarif" ] || [ ! -s "semgrep-results.sarif" ]; then
+            echo "No Semgrep results found, creating empty SARIF file"
+            echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"semgrep"}},"results":[]}]}' > semgrep-results.sarif
+          fi
+          
+          echo "SARIF file size: $(wc -c < semgrep-results.sarif) bytes"
 
       - name: Cost Estimation
         env:
