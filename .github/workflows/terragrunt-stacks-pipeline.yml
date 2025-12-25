@@ -182,8 +182,7 @@ jobs:
           echo "🔒 Running Semgrep security scan..."
           semgrep --config=p/security-audit --config=p/secrets infrastructure-catalog \
             --sarif \
-            --output=semgrep-results.sarif \
-            --exit-code=0 || true
+            --output=semgrep-results.sarif || true
 
       - name: Cost Estimation
         env:
