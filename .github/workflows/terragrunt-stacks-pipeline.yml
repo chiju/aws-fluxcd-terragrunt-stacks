@@ -385,15 +385,13 @@ jobs:
           done
 
       - name: Validate Terragrunt Stacks
-        working-directory: infrastructure-live/${{ matrix.environment }}
+        working-directory: infrastructure-live/${{ matrix.environment }}/eu-central-1/vpc
         env:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
           AWS_ACCOUNT_ID_STAGING: ${{ secrets.AWS_ACCOUNT_ID_STAGING }}
           AWS_ACCOUNT_ID_PRODUCTION: ${{ secrets.AWS_ACCOUNT_ID_PRODUCTION }}
         run: |
-          echo "✅ Validating Terragrunt stacks for ${{ matrix.environment }}..."
-          terragrunt stack validate
-          cd eu-central-1/platform
+          echo "✅ Validating VPC stack for ${{ matrix.environment }}..."
           terragrunt stack validate
 
   # ============================================================================
@@ -426,9 +424,9 @@ jobs:
           sudo mv terragrunt /usr/local/bin/
 
       - name: Check for Infrastructure Drift
+        working-directory: infrastructure-live/dev/eu-central-1/vpc
         run: |
-          cd infrastructure-live/dev/eu-central-1/platform
-          echo "🔍 Checking for infrastructure drift..."
+          echo "🔍 Checking for VPC stack drift..."
           
           terragrunt stack plan -detailed-exitcode -no-color > drift-report.txt 2>&1
           EXIT_CODE=$?
@@ -475,21 +473,12 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Plan Infrastructure
-        working-directory: infrastructure-live/dev
+        working-directory: infrastructure-live/dev/eu-central-1/vpc
         env:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
         run: |
-          if [ -n "${{ github.event.inputs.stack_path }}" ]; then
-            cd "${{ github.event.inputs.stack_path }}"
-            terragrunt stack run plan --non-interactive --backend-bootstrap
-          else
-            find . -name "terragrunt.stack.hcl" -exec dirname {} \; | while read stack_dir; do
-              echo "Planning stack: $stack_dir"
-              cd "$stack_dir"
-              terragrunt stack run plan --non-interactive --backend-bootstrap
-              cd - > /dev/null
-            done
-          fi
+          echo "Planning VPC stack"
+          terragrunt stack run plan --non-interactive --backend-bootstrap
 
       - name: Comment PR
         if: github.event_name == 'pull_request'
@@ -611,21 +600,12 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Apply Infrastructure
-        working-directory: infrastructure-live/dev
+        working-directory: infrastructure-live/dev/eu-central-1/vpc
         env:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
         run: |
-          if [ -n "${{ github.event.inputs.stack_path }}" ]; then
-            cd "${{ github.event.inputs.stack_path }}"
-            terragrunt stack run apply --non-interactive --backend-bootstrap
-          else
-            find . -name "terragrunt.stack.hcl" -exec dirname {} \; | while read stack_dir; do
-              echo "Applying stack: $stack_dir"
-              cd "$stack_dir"
-              terragrunt stack run apply --non-interactive --backend-bootstrap
-              cd - > /dev/null
-            done
-          fi
+          echo "Applying VPC stack"
+          terragrunt stack run apply --non-interactive --backend-bootstrap
 
   apply-staging:
     name: Apply Staging
@@ -739,16 +719,9 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Destroy Infrastructure
-        working-directory: infrastructure-live/${{ github.event.inputs.environment }}
+        working-directory: infrastructure-live/dev/eu-central-1/vpc
         env:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
-          AWS_ACCOUNT_ID_STAGING: ${{ secrets.AWS_ACCOUNT_ID_STAGING }}
-          AWS_ACCOUNT_ID_PRODUCTION: ${{ secrets.AWS_ACCOUNT_ID_PRODUCTION }}
         run: |
-          if [ -n "${{ github.event.inputs.stack_path }}" ]; then
-            cd "${{ github.event.inputs.stack_path }}"
-            terragrunt stack run destroy --non-interactive
-          else
-            echo "⚠️  Destroy all stacks requires explicit stack path for safety"
-            exit 1
-          fi
+          echo "Destroying VPC stack"
+          terragrunt stack run destroy --non-interactive
