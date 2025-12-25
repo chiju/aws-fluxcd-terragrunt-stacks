@@ -42,10 +42,11 @@ env:
   AWS_REGION: eu-central-1
   TERRAGRUNT_VERSION: 0.96.1
   TERRAFORM_VERSION: 1.14.3
-  CHECKOV_VERSION: 3.2.291
-  TRIVY_VERSION: 0.58.1
-  TFLINT_VERSION: 0.54.0
-  TERRAFORM_DOCS_VERSION: 0.19.0
+  CHECKOV_VERSION: 3.2.495
+  TRIVY_VERSION: 0.68.2
+  TFLINT_VERSION: 0.60.0
+  TERRAFORM_DOCS_VERSION: 0.21.0
+  SEMGREP_VERSION: 1.146.0
 
 permissions:
   id-token: write
@@ -154,7 +155,7 @@ jobs:
 
       - name: Setup Semgrep
         run: |
-          python3 -m pip install semgrep
+          python3 -m pip install semgrep==${{ env.SEMGREP_VERSION }}
           semgrep --version
 
       - name: Enhanced TFLint Scan
