@@ -54,11 +54,11 @@ permissions:
 
 jobs:
   # ============================================================================
-  # SECURITY & QUALITY CHECKS
+  # CODE QUALITY CHECKS
   # ============================================================================
   
   code-quality:
-    name: Code Quality & Security
+    name: Code Quality Checks
     runs-on: ubuntu-latest
     outputs:
       changed-stacks: ${{ steps.detect-changes.outputs.stacks }}
@@ -79,22 +79,6 @@ jobs:
           wget -q https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.TERRAGRUNT_VERSION }}/terragrunt_linux_amd64
           chmod +x terragrunt_linux_amd64
           sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
-
-      - name: Setup TFLint
-        run: |
-          wget -O tflint.zip https://github.com/terraform-linters/tflint/releases/download/v${{ env.TFLINT_VERSION }}/tflint_linux_amd64.zip
-          unzip tflint.zip
-          sudo mv tflint /usr/local/bin/
-          tflint --version
-
-      - name: Setup Trivy
-        run: |
-          sudo apt-get update
-          sudo apt-get install wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install trivy
 
       - name: Detect Changed Stacks
         id: detect-changes
@@ -118,6 +102,34 @@ jobs:
         run: |
           echo "🔍 Checking Terragrunt HCL formatting..."
           find infrastructure-live -name "*.hcl" | xargs terragrunt hcl format --check --diff
+
+  # ============================================================================
+  # SECURITY SCANS
+  # ============================================================================
+
+  security-scan:
+    name: Security Scans
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup TFLint
+        run: |
+          wget -O tflint.zip https://github.com/terraform-linters/tflint/releases/download/v${{ env.TFLINT_VERSION }}/tflint_linux_amd64.zip
+          unzip tflint.zip
+          sudo mv tflint /usr/local/bin/
+          tflint --version
+
+      - name: Setup Trivy
+        run: |
+          sudo apt-get update
+          sudo apt-get install wget apt-transport-https gnupg lsb-release
+          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
+          echo "deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main" | sudo tee -a /etc/apt/sources.list.d/trivy.list
+          sudo apt-get update
+          sudo apt-get install trivy
 
       - name: TFLint Security Scan
         run: |
@@ -162,13 +174,13 @@ jobs:
         run: ls -la *.sarif || echo "No SARIF files found"
 
       - name: Upload Security Results
-        if: always()  # Re-enabled
+        if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: checkov-results.sarif
 
       - name: Upload Trivy Results
-        if: always()  # Re-enabled
+        if: always()
         uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-results.sarif
@@ -190,7 +202,7 @@ jobs:
   validate:
     name: Validate Infrastructure
     runs-on: ubuntu-latest
-    needs: [code-quality]
+    needs: [code-quality, security-scan]  # Wait for both parallel jobs
     permissions:
       id-token: write
       contents: read
