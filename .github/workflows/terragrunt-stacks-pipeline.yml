@@ -183,6 +183,11 @@ jobs:
           semgrep --config=p/security-audit --config=p/secrets infrastructure-catalog \
             --sarif \
             --output=semgrep-results.sarif || true
+          
+          # Create fallback if Semgrep didn't create the file
+          if [ ! -f semgrep-results.sarif ]; then
+            echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"semgrep"}},"results":[]}]}' > semgrep-results.sarif
+          fi
 
       - name: Cost Estimation
         env:
@@ -205,7 +210,6 @@ jobs:
           echo "Creating SARIF files..."
           echo '{"version":"2.1.0","runs":[]}' > checkov-results.sarif
           echo '{"version":"2.1.0","runs":[]}' > trivy-results.sarif
-          echo '{"version":"2.1.0","runs":[]}' > semgrep-results.sarif
 
       - name: Checkov Security Scan
         run: |
