@@ -177,7 +177,8 @@ jobs:
       - name: Semgrep Security Scan
         run: |
           echo "🔒 Running Semgrep security scan..."
-          semgrep --config=auto infrastructure-catalog --sarif --output=semgrep-results.sarif || true
+          # Run with severity filtering to reduce SARIF size
+          semgrep --config=auto infrastructure-catalog --severity=ERROR --severity=WARNING --sarif --output=semgrep-results.sarif || true
           
           # Check if SARIF file exists and has content
           if [ ! -f "semgrep-results.sarif" ] || [ ! -s "semgrep-results.sarif" ]; then
