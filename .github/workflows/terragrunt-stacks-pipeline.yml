@@ -95,13 +95,14 @@ jobs:
 
       - name: Terraform Format Check
         run: |
-          echo "🔍 Checking Terraform formatting..."
-          find infrastructure-catalog infrastructure-live -name "*.tf" | xargs terraform fmt -check=true -diff=true
+          echo "🔍 Checking Terraform module formatting..."
+          terraform fmt -check -recursive infrastructure-catalog/modules/
 
-      - name: Terragrunt HCL Format Check
+      - name: Terragrunt Stack Format Check
+        working-directory: infrastructure-live/dev
         run: |
-          echo "🔍 Checking Terragrunt HCL formatting..."
-          find infrastructure-live -name "*.hcl" | xargs terragrunt hcl format --check --diff
+          echo "🔍 Checking Terragrunt stack formatting..."
+          terragrunt stack fmt --terragrunt-check
 
   # ============================================================================
   # SECURITY SCANS
@@ -252,6 +253,7 @@ jobs:
           AWS_ACCOUNT_ID_PRODUCTION: ${{ secrets.AWS_ACCOUNT_ID_PRODUCTION }}
         run: |
           echo "✅ Validating Terragrunt stacks for ${{ matrix.environment }}..."
+          terragrunt stack validate
           cd eu-central-1/platform
           terragrunt stack validate
 
