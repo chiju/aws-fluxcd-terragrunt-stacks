@@ -41,12 +41,11 @@ concurrency:
 env:
   AWS_REGION: eu-central-1
   TERRAGRUNT_VERSION: 0.96.1
-  TERRAFORM_VERSION: 1.11.1
+  TERRAFORM_VERSION: 1.14.3
   CHECKOV_VERSION: 3.2.291
   TRIVY_VERSION: 0.58.1
   TFLINT_VERSION: 0.54.0
-  TFSEC_VERSION: 1.28.10
-  TERRAFORM_DOCS_VERSION: 0.17.0
+  TERRAFORM_DOCS_VERSION: 0.19.0
 
 permissions:
   id-token: write
@@ -130,12 +129,6 @@ jobs:
           sudo mv tflint /usr/local/bin/
           tflint --version
 
-      - name: Setup TFSec
-        run: |
-          wget https://github.com/aquasecurity/tfsec/releases/download/v${{ env.TFSEC_VERSION }}/tfsec-linux-amd64
-          chmod +x tfsec-linux-amd64
-          sudo mv tfsec-linux-amd64 /usr/local/bin/tfsec
-
       - name: Setup Trivy
         run: |
           sudo apt-get update
@@ -160,11 +153,6 @@ jobs:
         run: |
           python3 -m pip install semgrep
           semgrep --version
-
-      - name: TFSec Security Scan
-        run: |
-          echo "🔒 Running TFSec security scan..."
-          tfsec infrastructure-catalog --format sarif --out tfsec-results.sarif --soft-fail || true
 
       - name: Enhanced TFLint Scan
         run: |
@@ -212,7 +200,6 @@ jobs:
           echo "Creating SARIF files..."
           echo '{"version":"2.1.0","runs":[]}' > checkov-results.sarif
           echo '{"version":"2.1.0","runs":[]}' > trivy-results.sarif
-          echo '{"version":"2.1.0","runs":[]}' > tfsec-results.sarif
           echo '{"version":"2.1.0","runs":[]}' > semgrep-results.sarif
 
       - name: Checkov Security Scan
@@ -252,12 +239,6 @@ jobs:
         with:
           sarif_file: trivy-results.sarif
 
-      - name: Upload TFSec Results
-        if: always()
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: tfsec-results.sarif
-
       - name: Generate Consolidated Security Report
         if: always()
         run: |
@@ -270,7 +251,7 @@ jobs:
           report = {
             'scan_execution': {
               'timestamp': datetime.utcnow().isoformat() + 'Z',
-              'tools_executed': ['checkov', 'trivy', 'tfsec', 'semgrep'],
+              'tools_executed': ['checkov', 'trivy', 'semgrep'],
               'repository_scope': 'Terragrunt Stacks Infrastructure'
             },
             'summary': {'total_issues': 0, 'by_severity': {}, 'by_tool': {}},
@@ -278,7 +259,7 @@ jobs:
           }
           
           # Process each SARIF file
-          tools = ['checkov', 'trivy', 'tfsec', 'semgrep']
+          tools = ['checkov', 'trivy', 'semgrep']
           for tool in tools:
             try:
               with open(f'{tool}-results.sarif', 'r') as f:
@@ -328,7 +309,6 @@ jobs:
           path: |
             checkov-results.sarif
             trivy-results.sarif
-            tfsec-results.sarif
             semgrep-results.sarif
           retention-days: 30
 
