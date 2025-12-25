@@ -180,10 +180,10 @@ jobs:
       - name: Semgrep Security Scan
         run: |
           echo "🔒 Running Semgrep security scan..."
-          semgrep --config=p/security-audit --config=p/secrets infrastructure-catalog --json --output=semgrep-results.json || true
-          
-          # Create minimal SARIF file
-          echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"semgrep","version":"1.0.0"}},"results":[]}]}' > semgrep-results.sarif
+          semgrep --config=p/security-audit --config=p/secrets infrastructure-catalog \
+            --sarif \
+            --output=semgrep-results.sarif \
+            --exit-code=0 || true
 
       - name: Cost Estimation
         env:
@@ -246,6 +246,13 @@ jobs:
         with:
           sarif_file: trivy-results.sarif
           category: trivy
+
+      - name: Upload Semgrep Results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep-results.sarif
+          category: semgrep
 
       - name: Generate Consolidated Security Report
         if: always()
