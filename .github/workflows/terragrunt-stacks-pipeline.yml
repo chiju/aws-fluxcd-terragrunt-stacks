@@ -258,6 +258,62 @@ jobs:
         with:
           sarif_file: tfsec-results.sarif
 
+      - name: Generate Consolidated Security Report
+        if: always()
+        run: |
+          echo "📊 Generating consolidated security report..."
+          python3 -c "
+          import json
+          from datetime import datetime
+          
+          # Initialize report structure
+          report = {
+            'scan_execution': {
+              'timestamp': datetime.utcnow().isoformat() + 'Z',
+              'tools_executed': ['checkov', 'trivy', 'tfsec', 'semgrep'],
+              'repository_scope': 'Terragrunt Stacks Infrastructure'
+            },
+            'summary': {'total_issues': 0, 'by_severity': {}, 'by_tool': {}},
+            'tools': {}
+          }
+          
+          # Process each SARIF file
+          tools = ['checkov', 'trivy', 'tfsec', 'semgrep']
+          for tool in tools:
+            try:
+              with open(f'{tool}-results.sarif', 'r') as f:
+                sarif = json.load(f)
+                issues = []
+                if sarif.get('runs'):
+                  for run in sarif['runs']:
+                    issues.extend(run.get('results', []))
+                
+                report['tools'][tool] = {
+                  'issues_count': len(issues),
+                  'status': 'completed' if len(issues) >= 0 else 'failed'
+                }
+                report['summary']['by_tool'][tool] = len(issues)
+                report['summary']['total_issues'] += len(issues)
+            except Exception as e:
+              report['tools'][tool] = {'issues_count': 0, 'status': 'failed', 'error': str(e)}
+              report['summary']['by_tool'][tool] = 0
+          
+          # Write consolidated report
+          with open('consolidated-security-report.json', 'w') as f:
+            json.dump(report, f, indent=2)
+          
+          # Generate CSV summary
+          import csv
+          with open('security-summary.csv', 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Tool', 'Issues Found', 'Status'])
+            for tool, data in report['tools'].items():
+              writer.writerow([tool.title(), data['issues_count'], data['status']])
+            writer.writerow(['TOTAL', report['summary']['total_issues'], 'Summary'])
+          
+          print(f\"📊 Consolidated report: {report['summary']['total_issues']} total issues found\")
+          "
+
       - name: Upload Semgrep Results
         if: always()
         uses: github/codeql-action/upload-sarif@v4
@@ -274,6 +330,16 @@ jobs:
             trivy-results.sarif
             tfsec-results.sarif
             semgrep-results.sarif
+          retention-days: 30
+
+      - name: Save Consolidated Reports as Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-security-reports
+          path: |
+            consolidated-security-report.json
+            security-summary.csv
           retention-days: 30
 
   # ============================================================================
