@@ -93,12 +93,22 @@ variable "flow_log_traffic_type" {
 variable "flow_log_retention_days" {
   description = "Number of days to retain flow logs"
   type        = number
-  default     = 30
+  # Security Fix: CKV_AWS_338 - Changed from 30 to 365 days (1 year)
+  # Industry compliance standards require at least 1 year log retention
+  default     = 365
 
   validation {
     condition     = contains([1, 3, 5, 7, 14, 30, 60, 90, 120, 150, 180, 365, 400, 545, 731, 1827, 3653], var.flow_log_retention_days)
     error_message = "Flow log retention days must be a valid CloudWatch Logs retention period."
   }
+}
+
+variable "flow_log_kms_key_id" {
+  description = "KMS key ID for encrypting VPC flow logs. If not provided, uses default AWS managed key."
+  type        = string
+  # Security Fix: CKV_AWS_158 - Enable KMS encryption for CloudWatch logs
+  # Allows customer-managed encryption keys for enhanced security
+  default     = null
 }
 
 variable "enable_s3_endpoint" {
