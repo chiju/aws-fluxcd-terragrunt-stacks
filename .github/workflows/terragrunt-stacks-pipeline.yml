@@ -26,13 +26,13 @@ on:
         required: false
         type: string
   
-  pull_request:
-    branches: [main]
+  # pull_request:
+  #   branches: [main]
   
-  schedule:
-    - cron: '0 6 * * 1-5'  # 6 AM weekdays - drift detection
+  # schedule:
+  #   - cron: '0 6 * * 1-5'  # 6 AM weekdays - drift detection
 
-  push:
+  # push:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
