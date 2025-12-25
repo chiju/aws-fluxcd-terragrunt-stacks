@@ -156,6 +156,11 @@ jobs:
           curl -fsSL https://raw.githubusercontent.com/infracost/infracost/master/scripts/install.sh | sh
           sudo mv /tmp/infracost* /usr/local/bin/infracost
 
+      - name: Setup Semgrep
+        run: |
+          python3 -m pip install semgrep
+          semgrep --version
+
       - name: TFSec Security Scan
         run: |
           echo "🔒 Running TFSec security scan..."
@@ -181,6 +186,11 @@ jobs:
             terraform-docs markdown table --output-file README.md "$dir" || true
           done
 
+      - name: Semgrep Security Scan
+        run: |
+          echo "🔒 Running Semgrep security scan..."
+          semgrep --config=auto infrastructure-catalog --json --output=semgrep-results.json --sarif --sarif-output=semgrep-results.sarif || true
+
       - name: Cost Estimation
         env:
           INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
@@ -203,6 +213,7 @@ jobs:
           echo '{"version":"2.1.0","runs":[]}' > checkov-results.sarif
           echo '{"version":"2.1.0","runs":[]}' > trivy-results.sarif
           echo '{"version":"2.1.0","runs":[]}' > tfsec-results.sarif
+          echo '{"version":"2.1.0","runs":[]}' > semgrep-results.sarif
 
       - name: Checkov Security Scan
         run: |
@@ -247,6 +258,12 @@ jobs:
         with:
           sarif_file: tfsec-results.sarif
 
+      - name: Upload Semgrep Results
+        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: semgrep-results.sarif
+
       - name: Save SARIF Files as Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -256,6 +273,7 @@ jobs:
             checkov-results.sarif
             trivy-results.sarif
             tfsec-results.sarif
+            semgrep-results.sarif
           retention-days: 30
 
   # ============================================================================
