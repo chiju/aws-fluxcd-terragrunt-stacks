@@ -177,54 +177,14 @@ jobs:
       - name: Semgrep Security Scan
         run: |
           echo "🔒 Running Semgrep security scan..."
-          # Use native SARIF output with minimal rules to avoid size issues
-          semgrep --config=p/security-audit --config=p/secrets infrastructure-catalog --sarif --output=semgrep-results.sarif || true
+          semgrep --config=p/security-audit --config=p/secrets infrastructure-catalog \
+            --sarif \
+            --output=semgrep-results.sarif || true
           
-          # Validate and fix SARIF file
-          if [ ! -f "semgrep-results.sarif" ] || [ $(wc -c < semgrep-results.sarif) -lt 100 ]; then
-            echo "Creating valid minimal SARIF file"
-            cat > semgrep-results.sarif << 'JSON'
-{
-  "$schema": "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
-  "version": "2.1.0",
-  "runs": [
-    {
-      "tool": {
-        "driver": {
-          "name": "semgrep",
-          "version": "1.0.0",
-          "informationUri": "https://semgrep.dev",
-          "rules": []
-        }
-      },
-      "results": []
-    }
-  ]
-}
-JSON
-          else
-            # Validate existing SARIF has required fields
-            python3 -c "
-import json
-try:
-    with open('semgrep-results.sarif', 'r') as f:
-        data = json.load(f)
-    # Ensure required fields exist
-    if 'runs' in data and len(data['runs']) > 0:
-        run = data['runs'][0]
-        if 'tool' not in run or 'driver' not in run['tool']:
-            raise ValueError('Missing required tool.driver')
-        if 'rules' not in run['tool']['driver']:
-            run['tool']['driver']['rules'] = []
-    with open('semgrep-results.sarif', 'w') as f:
-        json.dump(data, f, indent=2)
-except Exception as e:
-    print(f'SARIF validation failed: {e}')
-    exit(1)
-"
+          # Create empty SARIF if no file exists
+          if [ ! -f "semgrep-results.sarif" ]; then
+            echo '{"version":"2.1.0","runs":[{"tool":{"driver":{"name":"semgrep"}},"results":[]}]}' > semgrep-results.sarif
           fi
-          
-          echo "SARIF file size: $(wc -c < semgrep-results.sarif) bytes"
 
       - name: Cost Estimation
         env:
