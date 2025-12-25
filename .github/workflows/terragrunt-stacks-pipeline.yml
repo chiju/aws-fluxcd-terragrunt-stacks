@@ -294,12 +294,6 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          find . -name "terragrunt.stack.hcl" -exec dirname {} \; | while read stack_dir; do
-            echo "Validating stack: $stack_dir"
-            cd "$stack_dir"
-            terragrunt stack run validate --non-interactive
-            cd - > /dev/null
-          done
 
   # ============================================================================
   # PLAN JOBS
