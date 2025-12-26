@@ -11,6 +11,7 @@ output "cluster_arn" {
 output "cluster_endpoint" {
   description = "EKS cluster endpoint"
   value       = aws_eks_cluster.main.endpoint
+  sensitive   = true
 }
 
 output "cluster_version" {
@@ -41,11 +42,13 @@ output "node_group_iam_role_arn" {
 output "cluster_certificate_authority_data" {
   description = "EKS cluster certificate authority data"
   value       = aws_eks_cluster.main.certificate_authority[0].data
+  sensitive   = true
 }
 
 output "cluster_oidc_issuer_url" {
   description = "EKS cluster OIDC issuer URL"
   value       = var.enable_irsa ? aws_eks_cluster.main.identity[0].oidc[0].issuer : null
+  sensitive   = true
 }
 
 output "oidc_provider_arn" {
