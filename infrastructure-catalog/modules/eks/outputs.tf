@@ -54,4 +54,5 @@ output "cluster_oidc_issuer_url" {
 output "oidc_provider_arn" {
   description = "EKS OIDC Identity Provider ARN"
   value       = var.enable_irsa ? aws_iam_openid_connect_provider.cluster[0].arn : null
+  sensitive   = true
 }
