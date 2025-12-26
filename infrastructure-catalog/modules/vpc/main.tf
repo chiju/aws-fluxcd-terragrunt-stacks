@@ -35,12 +35,12 @@ locals {
   ]
 
   private_subnet_cidrs = length(var.private_subnet_cidrs) > 0 ? var.private_subnet_cidrs : [
-    for i in range(local.az_count) : cidrsubnet(var.cidr_block, 8, i + 10)
+    for i in range(local.az_count) : cidrsubnet(var.cidr_block, 8, i + 20)
   ]
 
   database_subnet_cidrs = var.create_database_subnets ? (
     length(var.database_subnet_cidrs) > 0 ? var.database_subnet_cidrs : [
-      for i in range(local.az_count) : cidrsubnet(var.cidr_block, 8, i + 20)
+      for i in range(local.az_count) : cidrsubnet(var.cidr_block, 8, i + 30)
     ]
   ) : []
 }
@@ -117,7 +117,7 @@ resource "aws_subnet" "database" {
 
 # Database Subnet Group
 resource "aws_db_subnet_group" "database" {
-  count = length(var.database_subnet_cidrs) > 0 ? 1 : 0
+  count = length(local.database_subnet_cidrs) > 0 ? 1 : 0
 
   name       = "${var.name}-database-subnet-group"
   subnet_ids = aws_subnet.database[*].id
@@ -132,7 +132,7 @@ resource "aws_db_subnet_group" "database" {
 
 # Elastic IPs for NAT Gateways
 resource "aws_eip" "nat" {
-  count = var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.public_subnet_cidrs)) : 0
+  count = var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(local.public_subnet_cidrs)) : 0
 
   domain = "vpc"
 
@@ -148,7 +148,7 @@ resource "aws_eip" "nat" {
 
 # NAT Gateways
 resource "aws_nat_gateway" "main" {
-  count = var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.public_subnet_cidrs)) : 0
+  count = var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(local.public_subnet_cidrs)) : 0
 
   allocation_id = aws_eip.nat[count.index].id
   subnet_id     = aws_subnet.public[count.index].id
@@ -182,7 +182,7 @@ resource "aws_route_table" "public" {
 
 # Private Route Tables
 resource "aws_route_table" "private" {
-  count = var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(var.private_subnet_cidrs)) : 1
+  count = var.enable_nat_gateway ? (var.single_nat_gateway ? 1 : length(local.private_subnet_cidrs)) : 1
 
   vpc_id = aws_vpc.main.id
 
@@ -204,7 +204,7 @@ resource "aws_route_table" "private" {
 
 # Database Route Table
 resource "aws_route_table" "database" {
-  count = length(var.database_subnet_cidrs) > 0 ? 1 : 0
+  count = length(local.database_subnet_cidrs) > 0 ? 1 : 0
 
   vpc_id = aws_vpc.main.id
 
@@ -218,7 +218,7 @@ resource "aws_route_table" "database" {
 
 # Public Route Table Associations
 resource "aws_route_table_association" "public" {
-  count = length(var.public_subnet_cidrs)
+  count = length(local.public_subnet_cidrs)
 
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
@@ -226,7 +226,7 @@ resource "aws_route_table_association" "public" {
 
 # Private Route Table Associations
 resource "aws_route_table_association" "private" {
-  count = length(var.private_subnet_cidrs)
+  count = length(local.private_subnet_cidrs)
 
   subnet_id      = aws_subnet.private[count.index].id
   route_table_id = var.single_nat_gateway ? aws_route_table.private[0].id : aws_route_table.private[count.index].id
@@ -234,7 +234,7 @@ resource "aws_route_table_association" "private" {
 
 # Database Route Table Associations
 resource "aws_route_table_association" "database" {
-  count = length(var.database_subnet_cidrs)
+  count = length(local.database_subnet_cidrs)
 
   subnet_id      = aws_subnet.database[count.index].id
   route_table_id = aws_route_table.database[0].id
@@ -343,8 +343,9 @@ resource "aws_vpc_endpoint" "interface_endpoints" {
 }
 
 # Security Group for VPC Endpoints
-# checkov:skip=CKV2_AWS_5:Security group is conditionally attached to VPC endpoints when interface_vpc_endpoints is configured
+# This security group is attached to interface VPC endpoints when interface_vpc_endpoints is configured
 resource "aws_security_group" "vpc_endpoints" {
+  # checkov:skip=CKV2_AWS_5:Security group is attached to VPC endpoints in aws_vpc_endpoint.interface_endpoints resource
   count = length(var.interface_vpc_endpoints) > 0 ? 1 : 0
 
   name_prefix = "${var.name}-vpc-endpoints-"

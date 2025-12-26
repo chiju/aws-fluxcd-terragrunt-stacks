@@ -479,11 +479,11 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Plan Infrastructure
-        working-directory: infrastructure-live/dev/eu-central-1/vpc
+        working-directory: infrastructure-live/dev/eu-central-1/platform
         env:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
         run: |
-          echo "Planning VPC stack"
+          echo "Planning platform stack (VPC + EKS)"
           terragrunt stack run plan --non-interactive --backend-bootstrap
 
       - name: Comment PR
@@ -606,11 +606,11 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Apply Infrastructure
-        working-directory: infrastructure-live/dev/eu-central-1/vpc
+        working-directory: infrastructure-live/dev/eu-central-1/platform
         env:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
         run: |
-          echo "Applying VPC stack"
+          echo "Applying platform stack (VPC + EKS)"
           terragrunt stack run apply --non-interactive --backend-bootstrap
 
   apply-staging:
@@ -723,9 +723,9 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Destroy Infrastructure
-        working-directory: infrastructure-live/dev/eu-central-1/vpc
+        working-directory: infrastructure-live/dev/eu-central-1/platform
         env:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
         run: |
-          echo "Destroying VPC stack"
+          echo "Destroying platform stack (VPC + EKS)"
           terragrunt stack run destroy --non-interactive
