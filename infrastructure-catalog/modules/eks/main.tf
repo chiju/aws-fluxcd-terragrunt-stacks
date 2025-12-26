@@ -176,7 +176,7 @@ resource "aws_eks_cluster" "main" {
     endpoint_public_access  = var.endpoint_public_access
     public_access_cidrs     = var.endpoint_public_access ? var.public_access_cidrs : null
     security_group_ids      = [aws_security_group.cluster.id]
-    
+
     # Explicitly disable public access when not needed for security
     # semgrep:ignore terraform.lang.security.eks-public-endpoint-enabled.eks-public-endpoint-enabled
   }
@@ -255,7 +255,7 @@ resource "aws_eks_access_policy_association" "org_access_admin" {
 # Launch template for node group with additional security groups
 resource "aws_launch_template" "node_group" {
   name_prefix = "${var.name}-node-group-"
-  
+
   # Only specify security groups - let EKS manage AMI, instance type, and user data
   vpc_security_group_ids = [
     aws_security_group.node_group.id
@@ -263,8 +263,8 @@ resource "aws_launch_template" "node_group" {
 
   # IMDS v2 enforcement for security
   metadata_options {
-    http_endpoint = "enabled"
-    http_tokens   = "required"
+    http_endpoint               = "enabled"
+    http_tokens                 = "required"
     http_put_response_hop_limit = 1
   }
 
