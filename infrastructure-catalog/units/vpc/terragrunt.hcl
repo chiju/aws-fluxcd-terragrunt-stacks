@@ -12,7 +12,7 @@ inputs = {
 
   # VPC Configuration
   cidr_block = values.cidr_block
-  
+
   # DNS Configuration (required for EKS)
   enable_dns_support   = true
   enable_dns_hostnames = true
@@ -37,7 +37,7 @@ inputs = {
   # VPC Endpoints
   enable_s3_endpoint       = try(values.enable_s3_endpoint, true)
   enable_dynamodb_endpoint = try(values.enable_dynamodb_endpoint, false)
-  interface_vpc_endpoints  = try(values.interface_vpc_endpoints, {
+  interface_vpc_endpoints = try(values.interface_vpc_endpoints, {
     "ecr.dkr" = "ECR Docker endpoint"
     "ecr.api" = "ECR API endpoint"
     "logs"    = "CloudWatch Logs endpoint"
