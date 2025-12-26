@@ -482,6 +482,8 @@ jobs:
         working-directory: infrastructure-live/dev/eu-central-1/platform
         env:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
+          AWS_GITHUB_ROLE_ARN_DEV: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
+          ADMIN_IP: ${{ secrets.ADMIN_IP }}
         run: |
           echo "Planning platform stack (VPC + EKS)"
           terragrunt stack run plan --non-interactive --backend-bootstrap
@@ -609,6 +611,8 @@ jobs:
         working-directory: infrastructure-live/dev/eu-central-1/platform
         env:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
+          AWS_GITHUB_ROLE_ARN_DEV: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
+          ADMIN_IP: ${{ secrets.ADMIN_IP }}
         run: |
           echo "Applying platform stack (VPC + EKS)"
           terragrunt stack run apply --non-interactive --backend-bootstrap
@@ -726,6 +730,8 @@ jobs:
         working-directory: infrastructure-live/dev/eu-central-1/platform
         env:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
+          AWS_GITHUB_ROLE_ARN_DEV: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
+          ADMIN_IP: ${{ secrets.ADMIN_IP }}
         run: |
           echo "Destroying platform stack (VPC + EKS)"
           terragrunt stack run destroy --non-interactive
