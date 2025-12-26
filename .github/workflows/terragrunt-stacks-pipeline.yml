@@ -389,13 +389,13 @@ jobs:
           done
 
       - name: Validate Terragrunt Stacks
-        working-directory: infrastructure-live/${{ matrix.environment }}/eu-central-1/vpc
+        working-directory: infrastructure-live/${{ matrix.environment }}/eu-central-1/platform
         env:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
           AWS_ACCOUNT_ID_STAGING: ${{ secrets.AWS_ACCOUNT_ID_STAGING }}
           AWS_ACCOUNT_ID_PRODUCTION: ${{ secrets.AWS_ACCOUNT_ID_PRODUCTION }}
         run: |
-          echo "✅ Validating VPC stack for ${{ matrix.environment }}..."
+          echo "✅ Validating platform stack for ${{ matrix.environment }}..."
           terragrunt stack validate
 
   # ============================================================================
