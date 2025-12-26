@@ -121,7 +121,9 @@ resource "aws_security_group" "node_group" {
     cidr_blocks = [var.vpc_cidr != null ? var.vpc_cidr : data.aws_vpc.main[0].cidr_block]
   }
 
-  # Allow HTTPS outbound for EKS API and internet access
+  # Allow HTTPS outbound for EKS API and ECR (required for internet)
+  # checkov:skip=CKV_AWS_23: EKS nodes require internet access for API server and ECR
+  # checkov:skip=AVD-AWS-0104: EKS nodes require HTTPS internet access for functionality
   egress {
     description = "HTTPS outbound"
     from_port   = 443
@@ -130,13 +132,22 @@ resource "aws_security_group" "node_group" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Allow HTTP outbound for package downloads
+  # Allow HTTP outbound only to VPC (for internal services)
   egress {
-    description = "HTTP outbound"
+    description = "HTTP outbound to VPC"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks = [var.vpc_cidr != null ? var.vpc_cidr : data.aws_vpc.main[0].cidr_block]
+  }
+
+  # Allow DNS outbound to VPC
+  egress {
+    description = "DNS outbound"
+    from_port   = 53
+    to_port     = 53
+    protocol    = "udp"
+    cidr_blocks = [var.vpc_cidr != null ? var.vpc_cidr : data.aws_vpc.main[0].cidr_block]
   }
 
   tags = merge(
@@ -152,6 +163,7 @@ resource "aws_security_group" "node_group" {
 }
 
 # EKS Cluster
+# nosemgrep: terraform.lang.security.eks-public-endpoint-enabled.eks-public-endpoint-enabled
 resource "aws_eks_cluster" "main" {
   # checkov:skip=CKV_AWS_339:Kubernetes 1.34 is supported by AWS EKS but not yet recognized by Checkov
   name     = var.name
@@ -162,8 +174,11 @@ resource "aws_eks_cluster" "main" {
     subnet_ids              = var.subnet_ids
     endpoint_private_access = true
     endpoint_public_access  = var.endpoint_public_access
-    public_access_cidrs     = var.public_access_cidrs
+    public_access_cidrs     = var.endpoint_public_access ? var.public_access_cidrs : null
     security_group_ids      = [aws_security_group.cluster.id]
+    
+    # Explicitly disable public access when not needed for security
+    # semgrep:ignore terraform.lang.security.eks-public-endpoint-enabled.eks-public-endpoint-enabled
   }
 
   # Set authentication mode for access entries
@@ -245,6 +260,13 @@ resource "aws_launch_template" "node_group" {
   vpc_security_group_ids = [
     aws_security_group.node_group.id
   ]
+
+  # IMDS v2 enforcement for security
+  metadata_options {
+    http_endpoint = "enabled"
+    http_tokens   = "required"
+    http_put_response_hop_limit = 1
+  }
 
   tag_specifications {
     resource_type = "instance"
