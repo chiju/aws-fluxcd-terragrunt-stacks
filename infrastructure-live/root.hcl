@@ -65,6 +65,7 @@ provider "aws" {
   }
 }
 
+%{if !strcontains(get_terragrunt_dir(), "/fluxcd") && strcontains(get_terragrunt_dir(), "/eks")~}
 provider "kubernetes" {
   host                   = try(data.aws_eks_cluster.cluster[0].endpoint, "")
   cluster_ca_certificate = try(base64decode(data.aws_eks_cluster.cluster[0].certificate_authority[0].data), "")
@@ -75,7 +76,9 @@ provider "kubernetes" {
     args        = ["eks", "get-token", "--cluster-name", try(data.aws_eks_cluster.cluster[0].name, "")]
   }
 }
+%{endif~}
 
+%{if strcontains(get_terragrunt_dir(), "/fluxcd")~}
 provider "github" {
   # Configuration will be provided via environment variables
 }
@@ -97,6 +100,7 @@ provider "flux" {
     branch = "main"
   }
 }
+%{endif~}
 EOF
 }
 
