@@ -73,7 +73,13 @@ resource "kubernetes_manifest" "flux_instance" {
     }
   }
 
-  depends_on = [kubernetes_secret_v1.flux_github_app]
+  depends_on = [
+    helm_release.flux_operator,
+    kubernetes_secret_v1.flux_github_app
+  ]
+
+  # Skip validation during plan to avoid CRD availability issues
+  computed_fields = ["status"]
 }
 
 
