@@ -17,6 +17,18 @@ resource "helm_release" "flux_operator" {
     yamlencode({
       livenessProbe  = null
       readinessProbe = null
+      
+      # Required fields based on schema
+      multitenancy = {
+        enabled                                = false
+        defaultServiceAccount                  = "flux-operator"
+        enabledForWorkloadIdentity            = false
+        defaultWorkloadIdentityServiceAccount = "flux-operator"
+      }
+      
+      reporting = {
+        interval = "5m"
+      }
     })
   ]
 
