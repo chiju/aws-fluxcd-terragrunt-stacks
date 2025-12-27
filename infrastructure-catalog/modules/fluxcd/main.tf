@@ -49,7 +49,7 @@ resource "flux_bootstrap_git" "main" {
   embedded_manifests = true
 
   # GitHub App authentication (if provided)
-  secret_name = var.github_app_id != "" ? kubernetes_secret_v1.flux_github_app[0].metadata[0].name : null
+
 
   depends_on = [data.aws_eks_cluster.cluster]
 }
