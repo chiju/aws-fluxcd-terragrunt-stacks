@@ -615,12 +615,20 @@ jobs:
           role-to-assume: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Get Runner IP
+        id: runner-ip
+        run: |
+          RUNNER_IP=$(curl -s https://ifconfig.me)
+          echo "ip=$RUNNER_IP" >> $GITHUB_OUTPUT
+          echo "Runner IP: $RUNNER_IP"
+
       - name: Apply Infrastructure
         working-directory: infrastructure-live/dev/eu-central-1/platform
         env:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
           AWS_GITHUB_ROLE_ARN_DEV: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
           ADMIN_IP: ${{ secrets.ADMIN_IP }}
+          RUNNER_IP: ${{ steps.runner-ip.outputs.ip }}/32
           FLUXCD_APP_ID: ${{ secrets.FLUXCD_APP_ID }}
           FLUXCD_APP_INSTALLATION_ID: ${{ secrets.FLUXCD_APP_INSTALLATION_ID }}
           FLUXCD_APP_PRIVATE_KEY: ${{ secrets.FLUXCD_APP_PRIVATE_KEY }}

@@ -35,7 +35,11 @@ unit "eks" {
 
     # API endpoint access
     endpoint_public_access = true
-    public_access_cidrs    = ["0.0.0.0/0"]
+    public_access_cidrs    = [
+      get_env("ADMIN_IP"), 
+      "18.156.142.198/32",
+      get_env("RUNNER_IP")  # Dynamic runner IP from GitHub Actions
+    ]
 
     # Node configuration
     instance_types   = ["t3.medium"]
