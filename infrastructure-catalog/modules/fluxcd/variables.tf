@@ -55,15 +55,4 @@ variable "github_app_private_key" {
   default     = ""
 }
 
-# Fallback deploy key option
-variable "create_github_deploy_key" {
-  description = "Create GitHub deploy key (fallback if not using GitHub App)"
-  type        = bool
-  default     = false
-}
 
-variable "github_repository" {
-  description = "GitHub repository name (for deploy key)"
-  type        = string
-  default     = ""
-}
