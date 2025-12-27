@@ -396,7 +396,7 @@ jobs:
           AWS_ACCOUNT_ID_PRODUCTION: ${{ secrets.AWS_ACCOUNT_ID_PRODUCTION }}
         run: |
           echo "✅ Validating platform stack for ${{ matrix.environment }}..."
-          terragrunt stack validate
+          terragrunt stack run validate
 
   # ============================================================================
   # DRIFT DETECTION JOB
