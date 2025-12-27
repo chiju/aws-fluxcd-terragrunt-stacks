@@ -100,6 +100,7 @@ provider "flux" {
   
   git = {
     url = "https://github.com/chiju/aws-fluxcd-terragrunt-stacks.git"
+    branch = "main"
   }
 }
 EOF

@@ -73,8 +73,8 @@ unit "fluxcd" {
     git_repo_url = "https://github.com/chiju/aws-fluxcd-terragrunt-stacks.git"
 
     # GitHub App authentication
-    github_app_id              = get_env("TF_VAR_github_app_id")
-    github_app_installation_id = get_env("TF_VAR_github_app_installation_id")
-    github_app_private_key     = get_env("TF_VAR_github_app_private_key")
+    github_app_id              = get_env("FLUXCD_APP_ID")
+    github_app_installation_id = get_env("FLUXCD_APP_INSTALLATION_ID")
+    github_app_private_key     = get_env("FLUXCD_APP_PRIVATE_KEY")
   }
 }

@@ -484,6 +484,9 @@ jobs:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
           AWS_GITHUB_ROLE_ARN_DEV: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
           ADMIN_IP: ${{ secrets.ADMIN_IP }}
+          FLUXCD_APP_ID: ${{ secrets.FLUXCD_APP_ID }}
+          FLUXCD_APP_INSTALLATION_ID: ${{ secrets.FLUXCD_APP_INSTALLATION_ID }}
+          FLUXCD_APP_PRIVATE_KEY: ${{ secrets.FLUXCD_APP_PRIVATE_KEY }}
         run: |
           echo "Planning platform stack (VPC + EKS)"
           terragrunt stack run plan --non-interactive --backend-bootstrap
@@ -613,6 +616,9 @@ jobs:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
           AWS_GITHUB_ROLE_ARN_DEV: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
           ADMIN_IP: ${{ secrets.ADMIN_IP }}
+          FLUXCD_APP_ID: ${{ secrets.FLUXCD_APP_ID }}
+          FLUXCD_APP_INSTALLATION_ID: ${{ secrets.FLUXCD_APP_INSTALLATION_ID }}
+          FLUXCD_APP_PRIVATE_KEY: ${{ secrets.FLUXCD_APP_PRIVATE_KEY }}
         run: |
           echo "Applying platform stack (VPC + EKS)"
           terragrunt stack run apply --non-interactive --backend-bootstrap
