@@ -72,7 +72,14 @@ provider "aws" {
 }
 
 provider "kubernetes" {
-  # Configuration will be provided by modules that need it
+  host                   = try(data.aws_eks_cluster.cluster[0].endpoint, "")
+  cluster_ca_certificate = try(base64decode(data.aws_eks_cluster.cluster[0].certificate_authority[0].data), "")
+  
+  exec {
+    api_version = "client.authentication.k8s.io/v1beta1"
+    command     = "aws"
+    args        = ["eks", "get-token", "--cluster-name", try(data.aws_eks_cluster.cluster[0].name, "")]
+  }
 }
 
 provider "github" {
@@ -80,7 +87,21 @@ provider "github" {
 }
 
 provider "flux" {
-  # Configuration will be provided by modules that need it
+  kubernetes = {
+    host                   = try(data.aws_eks_cluster.cluster[0].endpoint, "")
+    cluster_ca_certificate = try(base64decode(data.aws_eks_cluster.cluster[0].certificate_authority[0].data), "")
+    
+    exec = {
+      api_version = "client.authentication.k8s.io/v1beta1"
+      command     = "aws"
+      args        = ["eks", "get-token", "--cluster-name", try(data.aws_eks_cluster.cluster[0].name, "")]
+    }
+  }
+  
+  git = {
+    url = "https://github.com/chiju/aws-fluxcd-terragrunt-stacks.git"
+    branch = "main"
+  }
 }
 EOF
 }
