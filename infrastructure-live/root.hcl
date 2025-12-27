@@ -40,25 +40,7 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.27.0"
     }
-    %{if strcontains(get_terragrunt_dir(), "/fluxcd")~}
-    flux = {
-      source  = "fluxcd/flux"
-      version = "1.7.6"
-    }
-    github = {
-      source  = "integrations/github"
-      version = "6.9.0"
-    }
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "3.0.1"
-    }
-    kubectl = {
-      source  = "gavinbunney/kubectl"
-      version = "1.19.0"
-    }
-    %{else~}
-    %{if strcontains(get_terragrunt_dir(), "/eks")~}
+    %{if !strcontains(get_terragrunt_dir(), "/fluxcd") && strcontains(get_terragrunt_dir(), "/eks")~}
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "3.0.1"
