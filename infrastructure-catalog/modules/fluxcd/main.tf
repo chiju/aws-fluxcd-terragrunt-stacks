@@ -50,7 +50,7 @@ resource "helm_release" "flux_instance" {
       }
       components = [
         "source-controller",
-        "kustomize-controller", 
+        "kustomize-controller",
         "helm-controller",
         "notification-controller"
       ]
