@@ -15,12 +15,8 @@ resource "helm_release" "flux_operator" {
 
   values = [
     yamlencode({
-      livenessProbe = {
-        enabled = false
-      }
-      readinessProbe = {
-        enabled = false
-      }
+      livenessProbe  = null
+      readinessProbe = null
     })
   ]
 
