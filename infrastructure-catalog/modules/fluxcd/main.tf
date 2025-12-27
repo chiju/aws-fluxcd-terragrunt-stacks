@@ -13,15 +13,16 @@ resource "helm_release" "flux_operator" {
   namespace        = "flux-system"
   create_namespace = true
 
-  set {
-    name  = "livenessProbe.enabled"
-    value = "false"
-  }
-
-  set {
-    name  = "readinessProbe.enabled"
-    value = "false"
-  }
+  values = [
+    yamlencode({
+      livenessProbe = {
+        enabled = false
+      }
+      readinessProbe = {
+        enabled = false
+      }
+    })
+  ]
 
   depends_on = [data.aws_eks_cluster.cluster]
 }
