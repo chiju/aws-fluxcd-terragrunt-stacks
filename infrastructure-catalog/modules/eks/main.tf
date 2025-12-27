@@ -141,13 +141,13 @@ resource "aws_security_group" "node_group" {
     cidr_blocks = [var.vpc_cidr != null ? var.vpc_cidr : data.aws_vpc.main[0].cidr_block]
   }
 
-  # Allow DNS outbound to VPC
+  # Allow DNS outbound (required for external name resolution)
   egress {
     description = "DNS outbound"
     from_port   = 53
     to_port     = 53
     protocol    = "udp"
-    cidr_blocks = [var.vpc_cidr != null ? var.vpc_cidr : data.aws_vpc.main[0].cidr_block]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = merge(
