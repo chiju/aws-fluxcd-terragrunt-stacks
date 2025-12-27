@@ -21,11 +21,11 @@ inputs = {
   cluster_name     = dependency.eks.outputs.cluster_name
   cluster_endpoint = dependency.eks.outputs.cluster_endpoint
   environment      = values.environment
-  
+
   # Git repository configuration
   git_repo_url = values.git_repo_url
   target_path  = "flux-config/clusters/${values.environment}"
-  
+
   # GitHub App authentication
   github_app_id              = values.github_app_id
   github_app_installation_id = values.github_app_installation_id
