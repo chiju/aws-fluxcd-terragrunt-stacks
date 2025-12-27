@@ -249,41 +249,7 @@ resource "aws_eks_access_policy_association" "org_access_admin" {
   depends_on = [aws_eks_access_entry.org_access]
 }
 
-# Launch template for node group with additional security groups
-resource "aws_launch_template" "node_group" {
-  name_prefix = "${var.name}-node-group-"
-
-  # Only specify security groups - let EKS manage AMI, instance type, and user data
-  vpc_security_group_ids = [
-    aws_security_group.node_group.id
-  ]
-
-  # IMDS v2 enforcement for security
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required"
-    http_put_response_hop_limit = 1
-  }
-
-  tag_specifications {
-    resource_type = "instance"
-    tags = merge(
-      var.tags,
-      {
-        Name = "${var.name}-node-group-instance"
-      }
-    )
-  }
-
-  tags = merge(
-    var.tags,
-    {
-      Name = "${var.name}-node-group-lt"
-    }
-  )
-}
-
-# EKS Node Group
+# EKS Node Group - Let EKS manage everything automatically
 resource "aws_eks_node_group" "main" {
   cluster_name    = aws_eks_cluster.main.name
   node_group_name = "${var.name}-node-group"
@@ -304,11 +270,7 @@ resource "aws_eks_node_group" "main" {
     max_unavailable = 1
   }
 
-  # Use launch template with additional security groups
-  launch_template {
-    id      = aws_launch_template.node_group.id
-    version = "$Latest"
-  }
+  # Let EKS manage security groups, AMI, instance type, and bootstrap user data automatically
 
   # Tags for cluster autoscaler and node group
   tags = merge(
@@ -329,23 +291,44 @@ resource "aws_eks_node_group" "main" {
   ]
 }
 
-# Cross-security group rules (created after both SGs exist)
-resource "aws_security_group_rule" "cluster_ingress_from_nodes" {
-  type                     = "ingress"
-  from_port                = 443
-  to_port                  = 443
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.node_group.id
-  security_group_id        = aws_security_group.cluster.id
-  description              = "HTTPS from node group"
-}
+# EKS Node Group - Let EKS manage everything automatically
+resource "aws_eks_node_group" "main" {
+  cluster_name    = aws_eks_cluster.main.name
+  node_group_name = "${var.name}-node-group"
+  node_role_arn   = aws_iam_role.node_group.arn
+  subnet_ids      = var.node_group_subnets
 
-resource "aws_security_group_rule" "nodes_ingress_from_cluster" {
-  type                     = "ingress"
-  from_port                = 1025
-  to_port                  = 65535
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.cluster.id
-  security_group_id        = aws_security_group.node_group.id
-  description              = "Cluster API to node communication"
+  capacity_type  = var.node_group_capacity_type
+  instance_types = var.instance_types
+  ami_type       = var.node_group_ami_type
+
+  scaling_config {
+    desired_size = var.desired_capacity
+    max_size     = var.max_capacity
+    min_size     = var.min_capacity
+  }
+
+  update_config {
+    max_unavailable = 1
+  }
+
+  # Let EKS manage security groups, AMI, instance type, and bootstrap user data automatically
+
+  # Tags for cluster autoscaler and node group
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.name}-node-group"
+    },
+    var.enable_cluster_autoscaler ? {
+      "k8s.io/cluster-autoscaler/enabled"     = "true"
+      "k8s.io/cluster-autoscaler/${var.name}" = "owned"
+    } : {}
+  )
+
+  depends_on = [
+    aws_iam_role_policy_attachment.node_group_worker_policy,
+    aws_iam_role_policy_attachment.node_group_cni_policy,
+    aws_iam_role_policy_attachment.node_group_registry_policy,
+  ]
 }
