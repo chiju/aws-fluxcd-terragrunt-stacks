@@ -36,23 +36,21 @@ resource "kubernetes_secret_v1" "flux_github_app" {
   depends_on = [helm_release.flux_operator]
 }
 
-# Create FluxInstance for GitOps
-resource "kubernetes_manifest" "flux_instance" {
-  manifest = {
-    apiVersion = "fluxcd.controlplane.io/v1"
-    kind       = "FluxInstance"
-    metadata = {
-      name      = "flux"
-      namespace = "flux-system"
-    }
-    spec = {
+# Install FluxInstance using Helm (like ArgoCD app-of-apps pattern)
+resource "helm_release" "flux_instance" {
+  name      = "flux-instance"
+  chart     = "oci://ghcr.io/controlplaneio-fluxcd/charts/flux-instance"
+  namespace = "flux-system"
+
+  values = [
+    yamlencode({
       distribution = {
         version  = "2.7.5"
         registry = "ghcr.io/fluxcd"
       }
       components = [
         "source-controller",
-        "kustomize-controller",
+        "kustomize-controller", 
         "helm-controller",
         "notification-controller"
       ]
@@ -70,16 +68,13 @@ resource "kubernetes_manifest" "flux_instance" {
         path       = var.target_path
         pullSecret = var.github_app_id != "" ? "flux-system" : null
       }
-    }
-  }
+    })
+  ]
 
   depends_on = [
     helm_release.flux_operator,
     kubernetes_secret_v1.flux_github_app
   ]
-
-  # Skip validation during plan to avoid CRD availability issues
-  computed_fields = ["status"]
 }
 
 
