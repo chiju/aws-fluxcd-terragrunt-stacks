@@ -26,7 +26,7 @@ resource "flux_bootstrap_git" "main" {
   path = var.target_path
 
   # Repository configuration
-  repository_url = var.git_repo_url
+  url    = var.git_repo_url
   branch         = var.git_branch
 
   # Cluster configuration
