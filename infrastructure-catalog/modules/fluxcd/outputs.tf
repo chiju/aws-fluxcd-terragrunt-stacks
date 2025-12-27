@@ -18,8 +18,4 @@ output "target_path" {
   value       = var.target_path
 }
 
-output "public_key" {
-  description = "FluxCD public key (for deploy key)"
-  value       = flux_bootstrap_git.main.public_key
-  sensitive   = true
-}
+

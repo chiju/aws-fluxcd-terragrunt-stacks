@@ -48,11 +48,4 @@ resource "kubernetes_secret_v1" "flux_github_app" {
   depends_on = [flux_bootstrap_git.main]
 }
 
-# Create GitHub deploy key (fallback for non-GitHub App setups)
-resource "github_repository_deploy_key" "flux" {
-  count      = var.create_github_deploy_key && var.github_app_id == "" ? 1 : 0
-  title      = "${var.cluster_name}-flux"
-  repository = var.github_repository
-  key        = flux_bootstrap_git.main.public_key
-  read_only  = false
-}
+
