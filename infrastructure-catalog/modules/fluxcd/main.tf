@@ -7,33 +7,33 @@ data "aws_eks_cluster" "cluster" {
 # Bootstrap FluxCD using the official Terraform provider
 resource "flux_bootstrap_git" "main" {
   path = var.target_path
-  
+
   # Repository configuration
   repository_url = var.git_repo_url
   branch         = var.git_branch
-  
+
   # Cluster configuration
-  cluster_domain    = var.cluster_domain
-  network_policy    = var.network_policy
-  
+  cluster_domain = var.cluster_domain
+  network_policy = var.network_policy
+
   # Components
   components_extra = var.components_extra
-  
+
   # Namespace
   namespace = var.namespace
-  
+
   # Version
   version = var.flux_version
-  
+
   # Toleration for control plane nodes
   toleration_keys = var.toleration_keys
-  
+
   # Embedded manifests (recommended for GitOps)
   embedded_manifests = true
-  
+
   # GitHub App authentication (if provided)
   secret_name = var.github_app_id != "" ? kubernetes_secret_v1.flux_github_app[0].metadata[0].name : null
-  
+
   depends_on = [data.aws_eks_cluster.cluster]
 }
 
@@ -51,7 +51,7 @@ resource "kubernetes_secret_v1" "flux_github_app" {
     githubAppInstallationID = var.github_app_installation_id
     githubAppPrivateKey     = var.github_app_private_key
   }
-  
+
   type = "Opaque"
 
   depends_on = [flux_bootstrap_git.main]
