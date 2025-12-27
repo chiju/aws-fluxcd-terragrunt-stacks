@@ -23,9 +23,7 @@ data "aws_eks_cluster" "cluster" {
 
 # Bootstrap FluxCD using the official Terraform provider
 resource "flux_bootstrap_git" "main" {
-  repository = var.git_repo_url
-  path       = var.target_path
-  branch     = "main"
+  path = var.target_path
 
   depends_on = [data.aws_eks_cluster.cluster]
 }
