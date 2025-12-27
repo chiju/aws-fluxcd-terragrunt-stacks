@@ -1,3 +1,20 @@
+terraform {
+  required_providers {
+    flux = {
+      source  = "fluxcd/flux"
+      version = "~> 1.7.6"
+    }
+    github = {
+      source  = "integrations/github"
+      version = "~> 6.9.0"
+    }
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "~> 3.0.1"
+    }
+  }
+}
+
 # Wait for EKS cluster to be ready before deploying FluxCD
 data "aws_eks_cluster" "cluster" {
   count = var.cluster_endpoint != null && var.cluster_endpoint != "https://mock-endpoint" ? 1 : 0
