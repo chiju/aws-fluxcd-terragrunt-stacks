@@ -25,32 +25,6 @@ data "aws_eks_cluster" "cluster" {
 resource "flux_bootstrap_git" "main" {
   path = var.target_path
 
-  # Repository configuration
-  url    = var.git_repo_url
-  branch = var.git_branch
-
-  # Cluster configuration
-  cluster_domain = var.cluster_domain
-  network_policy = var.network_policy
-
-  # Components
-  components_extra = var.components_extra
-
-  # Namespace
-  namespace = var.namespace
-
-  # Version
-  version = var.flux_version
-
-  # Toleration for control plane nodes
-  toleration_keys = var.toleration_keys
-
-  # Embedded manifests (recommended for GitOps)
-  embedded_manifests = true
-
-  # GitHub App authentication (if provided)
-
-
   depends_on = [data.aws_eks_cluster.cluster]
 }
 
