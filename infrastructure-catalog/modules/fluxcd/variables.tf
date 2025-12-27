@@ -9,10 +9,7 @@ variable "cluster_endpoint" {
   default     = null
 }
 
-variable "environment" {
-  description = "Environment name"
-  type        = string
-}
+
 
 variable "namespace" {
   description = "Kubernetes namespace for FluxCD"
