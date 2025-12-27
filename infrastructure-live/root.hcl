@@ -50,7 +50,6 @@ terraform {
       version = "1.19.0"
     }
     %{endif~}
-    %{endif~}
   }
 }
 
