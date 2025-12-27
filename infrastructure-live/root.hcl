@@ -35,12 +35,13 @@ generate "provider" {
   contents  = <<EOF
 terraform {
   required_version = "~> 1.14.3"
+  %{if !strcontains(get_terragrunt_dir(), "/fluxcd")~}
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 6.27.0"
     }
-    %{if !strcontains(get_terragrunt_dir(), "/fluxcd") && strcontains(get_terragrunt_dir(), "/eks")~}
+    %{if strcontains(get_terragrunt_dir(), "/eks")~}
     kubernetes = {
       source  = "hashicorp/kubernetes"
       version = "3.0.1"
@@ -51,6 +52,7 @@ terraform {
     }
     %{endif~}
   }
+  %{endif~}
 }
 
 provider "aws" {
