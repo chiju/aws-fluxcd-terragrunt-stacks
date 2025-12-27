@@ -6,11 +6,11 @@ data "aws_eks_cluster" "cluster" {
 
 # Install Flux Operator using Helm
 resource "helm_release" "flux_operator" {
-  name       = "flux-operator"
-  repository = "oci://ghcr.io/controlplaneio-fluxcd/charts"
-  chart      = "flux-operator"
-  version    = "0.38.1"
-  namespace  = "flux-system"
+  name             = "flux-operator"
+  repository       = "oci://ghcr.io/controlplaneio-fluxcd/charts"
+  chart            = "flux-operator"
+  version          = "0.38.1"
+  namespace        = "flux-system"
   create_namespace = true
 
   depends_on = [data.aws_eks_cluster.cluster]
@@ -57,10 +57,10 @@ resource "kubernetes_manifest" "flux_instance" {
         "notification-controller"
       ]
       cluster = {
-        type         = "kubernetes"
-        multitenant  = false
+        type          = "kubernetes"
+        multitenant   = false
         networkPolicy = true
-        domain       = "cluster.local"
+        domain        = "cluster.local"
       }
       sync = {
         kind       = "GitRepository"
