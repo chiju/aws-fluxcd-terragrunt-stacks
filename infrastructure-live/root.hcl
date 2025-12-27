@@ -35,24 +35,24 @@ generate "provider" {
   contents  = <<EOF
 terraform {
   required_version = "~> 1.14.3"
-  %{if !strcontains(get_terragrunt_dir(), "/fluxcd")~}
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 6.27.0"
     }
-    %{if strcontains(get_terragrunt_dir(), "/eks")~}
     kubernetes = {
       source  = "hashicorp/kubernetes"
-      version = "3.0.1"
+      version = "~> 3.0.1"
     }
     kubectl = {
       source  = "gavinbunney/kubectl"
-      version = "1.19.0"
+      version = "~> 1.19.0"
     }
-    %{endif~}
+    helm = {
+      source  = "hashicorp/helm"
+      version = "~> 3.1.1"
+    }
   }
-  %{endif~}
 }
 
 provider "aws" {
@@ -67,7 +67,6 @@ provider "aws" {
   }
 }
 
-%{if !strcontains(get_terragrunt_dir(), "/fluxcd") && strcontains(get_terragrunt_dir(), "/eks")~}
 provider "kubernetes" {
   host                   = try(data.aws_eks_cluster.cluster[0].endpoint, "")
   cluster_ca_certificate = try(base64decode(data.aws_eks_cluster.cluster[0].certificate_authority[0].data), "")
@@ -78,31 +77,19 @@ provider "kubernetes" {
     args        = ["eks", "get-token", "--cluster-name", try(data.aws_eks_cluster.cluster[0].name, "")]
   }
 }
-%{endif~}
 
-%{if strcontains(get_terragrunt_dir(), "/fluxcd")~}
-provider "github" {
-  # Configuration will be provided via environment variables
-}
-
-provider "flux" {
-  kubernetes = {
+provider "helm" {
+  kubernetes {
     host                   = try(data.aws_eks_cluster.cluster[0].endpoint, "")
     cluster_ca_certificate = try(base64decode(data.aws_eks_cluster.cluster[0].certificate_authority[0].data), "")
     
-    exec = {
+    exec {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
       args        = ["eks", "get-token", "--cluster-name", try(data.aws_eks_cluster.cluster[0].name, "")]
     }
   }
-  
-  git = {
-    url = "https://github.com/chiju/aws-fluxcd-terragrunt-stacks.git"
-    branch = "main"
-  }
 }
-%{endif~}
 EOF
 }
 
