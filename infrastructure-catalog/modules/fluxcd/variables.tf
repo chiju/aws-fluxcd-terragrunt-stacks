@@ -34,35 +34,6 @@ variable "git_repo_url" {
   type        = string
 }
 
-variable "git_branch" {
-  description = "Git branch"
-  type        = string
-  default     = "main"
-}
-
-variable "cluster_domain" {
-  description = "Cluster domain"
-  type        = string
-  default     = "cluster.local"
-}
-
-variable "network_policy" {
-  description = "Enable network policy"
-  type        = bool
-  default     = true
-}
-
-variable "components_extra" {
-  description = "Extra FluxCD components to install"
-  type        = list(string)
-  default     = ["image-reflector-controller", "image-automation-controller"]
-}
-
-variable "toleration_keys" {
-  description = "Toleration keys for FluxCD pods"
-  type        = list(string)
-  default     = ["node-type"]
-}
 
 # GitHub App authentication (following ArgoCD pattern)
 variable "github_app_id" {
