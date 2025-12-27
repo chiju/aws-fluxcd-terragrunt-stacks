@@ -21,7 +21,7 @@ unit "vpc" {
       "logs"    = "CloudWatch Logs endpoint"
       "eks"     = "EKS API endpoint"
     }
-    
+
     # Enable NAT Gateway for internet access (required for ghcr.io)
     enable_nat_gateway = true
   }
