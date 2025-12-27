@@ -394,6 +394,11 @@ jobs:
           AWS_ACCOUNT_ID_DEV: ${{ secrets.AWS_ACCOUNT_ID_DEV }}
           AWS_ACCOUNT_ID_STAGING: ${{ secrets.AWS_ACCOUNT_ID_STAGING }}
           AWS_ACCOUNT_ID_PRODUCTION: ${{ secrets.AWS_ACCOUNT_ID_PRODUCTION }}
+          AWS_GITHUB_ROLE_ARN_DEV: ${{ secrets.AWS_GITHUB_ROLE_ARN_DEV }}
+          ADMIN_IP: ${{ secrets.ADMIN_IP }}
+          FLUXCD_APP_ID: ${{ secrets.FLUXCD_APP_ID }}
+          FLUXCD_APP_INSTALLATION_ID: ${{ secrets.FLUXCD_APP_INSTALLATION_ID }}
+          FLUXCD_APP_PRIVATE_KEY: ${{ secrets.FLUXCD_APP_PRIVATE_KEY }}
         run: |
           echo "✅ Validating platform stack for ${{ matrix.environment }}..."
           terragrunt stack run validate
