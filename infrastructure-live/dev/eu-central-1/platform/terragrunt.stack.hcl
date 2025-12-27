@@ -61,3 +61,20 @@ unit "eks" {
     }
   }
 }
+
+unit "fluxcd" {
+  source = "${get_repo_root()}/infrastructure-catalog/units/fluxcd"
+  path   = "fluxcd"
+
+  values = {
+    environment = "dev"
+    
+    # Git repository configuration
+    git_repo_url = "https://github.com/chiju/aws-fluxcd-terragrunt-stacks.git"
+    
+    # GitHub App authentication
+    github_app_id              = get_env("TF_VAR_github_app_id")
+    github_app_installation_id = get_env("TF_VAR_github_app_installation_id")
+    github_app_private_key     = get_env("TF_VAR_github_app_private_key")
+  }
+}
