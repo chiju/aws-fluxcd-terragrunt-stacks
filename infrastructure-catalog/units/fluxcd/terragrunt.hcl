@@ -10,7 +10,7 @@ dependency "eks" {
   config_path = "../eks"
 
   mock_outputs = {
-    cluster_name     = "mock-cluster"
+    cluster_id       = "mock-cluster"
     cluster_endpoint = "https://mock-endpoint"
   }
 
@@ -18,7 +18,7 @@ dependency "eks" {
 }
 
 inputs = {
-  cluster_name     = dependency.eks.outputs.cluster_name
+  cluster_name     = dependency.eks.outputs.cluster_id
   cluster_endpoint = dependency.eks.outputs.cluster_endpoint
   environment      = values.environment
 
