@@ -1,0 +1,28 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: weave-gitops
+  namespace: flux-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: weave-gitops
+      version: "4.0.36"
+      sourceRef:
+        kind: HelmRepository
+        name: weave-gitops
+        namespace: flux-system
+      interval: 12h
+  values:
+    adminUser:
+      create: true
+      username: admin
+      passwordHash: "$2a$10$P/tHQ1DNFXdvX0zRGA8LGeApZ7jQlVjsfAOY8htgdw3xJJPOOOUaa" # password
+    ingress:
+      enabled: false
+    service:
+      type: LoadBalancer
+      annotations:
+        service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+        service.beta.kubernetes.io/aws-load-balancer-scheme: "internal"
