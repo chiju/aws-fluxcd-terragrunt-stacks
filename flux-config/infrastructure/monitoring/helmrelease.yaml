@@ -8,7 +8,7 @@ spec:
   chart:
     spec:
       chart: kube-prometheus-stack
-      version: "79.1.0"
+      version: "80.8.0"
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
@@ -24,7 +24,7 @@ spec:
         storageSpec:
           volumeClaimTemplate:
             spec:
-              storageClassName: gp2
+              storageClassName: gp3
               accessModes: ["ReadWriteOnce"]
               resources:
                 requests:
@@ -33,5 +33,5 @@ spec:
       adminPassword: admin123
       persistence:
         enabled: true
-        storageClassName: gp2
+        storageClassName: gp3
         size: 10Gi
