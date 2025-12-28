@@ -4,4 +4,3 @@ resources:
   - storage-class
   - external-secrets
   - kube-prometheus-stack
-  - weave-gitops
