@@ -72,7 +72,7 @@ kube-prometheus-stack:
           cpu: 1000m
           memory: 4Gi
       # Persistent storage for Prometheus TSDB
-      storage:
+      storageSpec:
         volumeClaimTemplate:
           spec:
             storageClassName: gp3
