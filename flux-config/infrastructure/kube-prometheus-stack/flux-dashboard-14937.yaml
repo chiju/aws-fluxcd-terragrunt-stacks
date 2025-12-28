@@ -915,7 +915,7 @@ data:
         ]
       },
       "timezone": "",
-      "title": "Flux Cluster Stats-2",
+      "title": "flux-cluster-stats",
       "uid": "eM7_f4V7z",
       "version": 1
     }
