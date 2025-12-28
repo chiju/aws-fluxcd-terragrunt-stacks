@@ -71,15 +71,15 @@ kube-prometheus-stack:
         limits:
           cpu: 1000m
           memory: 4Gi
-      # Persistent storage for Prometheus TSDB (temporarily disabled)
-      # storageSpec:
-      #   volumeClaimTemplate:
-      #     spec:
-      #       storageClassName: gp3
-      #       accessModes: ["ReadWriteOnce"]
-      #       resources:
-      #         requests:
-      #           storage: 50Gi
+      # Persistent storage for Prometheus TSDB
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            storageClassName: gp3
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 50Gi
       # Allow Prometheus to discover ServiceMonitors in all namespaces
       serviceMonitorNamespaceSelector: {}
       serviceMonitorSelector:
