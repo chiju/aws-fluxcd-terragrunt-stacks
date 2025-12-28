@@ -45,9 +45,9 @@ resource "kubernetes_secret_v1" "flux_github_app" {
   }
 
   data = {
-    githubAppID             = var.github_app_id
-    githubAppInstallationID = var.github_app_installation_id
-    githubAppPrivateKey     = var.github_app_private_key
+    "github-app-id"              = var.github_app_id
+    "github-app-installation-id" = var.github_app_installation_id
+    "github-app-private-key"     = var.github_app_private_key
   }
 
   type = "Opaque"
@@ -111,6 +111,7 @@ resource "kubernetes_manifest" "platform_git_repo" {
       ref = {
         branch = "main"
       }
+      provider = var.github_app_id != "" ? "github" : null
       secretRef = var.github_app_id != "" ? {
         name = "flux-system"
       } : null
