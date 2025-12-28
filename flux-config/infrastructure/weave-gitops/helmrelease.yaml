@@ -18,7 +18,7 @@ spec:
     adminUser:
       create: true
       username: admin
-      passwordHash: "$2a$10$P/tHQ1DNFXdvX0zRGA8LGeApZ7jQlVjsfAOY8htgdw3xJJPOOOUaa" # password
+      passwordHash: "$2a$10$tZyOjzTdxv.6Mwknkwb8vuNEOvinNK3oI2y1/Oy4K3Ru8TgBt0lVu" # password
     ingress:
       enabled: false
     service:
