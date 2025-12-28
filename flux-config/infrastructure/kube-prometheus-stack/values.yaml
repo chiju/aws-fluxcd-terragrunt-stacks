@@ -59,7 +59,7 @@ kube-prometheus-stack:
           value: "system"
           effect: "NoSchedule"
       nodeSelector:
-        eks.amazonaws.com/nodegroup: "tbyte-dev-system-nodes"
+        eks.amazonaws.com/nodegroup: "fluxcd-dev-node-group"
       retention: 15d
       retentionSize: 45GB
       # Enable remote write receiver for Tempo metrics generator
@@ -94,7 +94,7 @@ kube-prometheus-stack:
         value: "system"
         effect: "NoSchedule"
     nodeSelector:
-      eks.amazonaws.com/nodegroup: "tbyte-dev-system-nodes"
+      eks.amazonaws.com/nodegroup: "fluxcd-dev-node-group"
     admin:
       existingSecret: grafana-admin-secret
       userKey: admin-user
@@ -185,7 +185,7 @@ kube-prometheus-stack:
           value: "system"
           effect: "NoSchedule"
       nodeSelector:
-        eks.amazonaws.com/nodegroup: "tbyte-dev-system-nodes"
+        eks.amazonaws.com/nodegroup: "fluxcd-dev-node-group"
       storage:
         volumeClaimTemplate:
           spec:
