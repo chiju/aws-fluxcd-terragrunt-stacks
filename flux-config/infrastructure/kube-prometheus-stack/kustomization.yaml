@@ -7,3 +7,4 @@ resources:
   - helmrelease.yaml
   - grafana-virtualservice.yaml
   - flux-podmonitor.yaml
+  - flux-dashboard.yaml

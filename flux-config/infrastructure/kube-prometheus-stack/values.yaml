@@ -30,6 +30,26 @@ kube-prometheus-stack:
         value: "system"
         effect: "NoSchedule"
   
+  grafana:
+    sidecar:
+      dashboards:
+        enabled: true
+        label: grafana_dashboard
+        labelValue: "1"
+        searchNamespace: ALL
+    dashboardProviders:
+      dashboardproviders.yaml:
+        apiVersion: 1
+        providers:
+        - name: 'flux'
+          orgId: 1
+          folder: 'FluxCD'
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/flux
+
   prometheus:
     prometheusSpec:
       # Schedule on system nodes
