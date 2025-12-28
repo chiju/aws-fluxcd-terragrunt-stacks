@@ -55,4 +55,9 @@ variable "github_app_private_key" {
   default     = ""
 }
 
+variable "ebs_csi_driver_role_arn" {
+  description = "EBS CSI Driver IAM role ARN"
+  type        = string
+}
+
 

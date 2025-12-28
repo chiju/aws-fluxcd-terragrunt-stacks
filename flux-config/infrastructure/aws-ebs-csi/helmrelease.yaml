@@ -21,4 +21,4 @@ spec:
         create: true
         name: ebs-csi-controller-sa
         annotations:
-          eks.amazonaws.com/role-arn: "arn:aws:iam::674240967242:role/fluxcd-dev-ebs-csi-driver-role"
+          eks.amazonaws.com/role-arn: "arn:aws:iam::054715966742:role/fluxcd-dev-ebs-csi-driver-role"

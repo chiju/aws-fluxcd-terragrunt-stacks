@@ -52,12 +52,17 @@ output "cluster_certificate_authority_data" {
 
 output "cluster_oidc_issuer_url" {
   description = "EKS cluster OIDC issuer URL"
-  value       = var.enable_irsa ? aws_eks_cluster.main.identity[0].oidc[0].issuer : null
+  value       = aws_eks_cluster.main.identity[0].oidc[0].issuer
   sensitive   = true
 }
 
 output "oidc_provider_arn" {
   description = "EKS OIDC Identity Provider ARN"
-  value       = var.enable_irsa ? aws_iam_openid_connect_provider.cluster[0].arn : null
+  value       = aws_iam_openid_connect_provider.cluster.arn
   sensitive   = true
+}
+
+output "ebs_csi_driver_role_arn" {
+  description = "EBS CSI Driver IAM role ARN"
+  value       = aws_iam_role.ebs_csi_driver.arn
 }
