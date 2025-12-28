@@ -8,47 +8,45 @@ metadata:
 data:
   flux-cluster.json: |
     {
-      "dashboard": {
-        "id": null,
-        "title": "Flux Cluster Stats",
-        "tags": ["flux"],
-        "style": "dark",
-        "timezone": "browser",
-        "panels": [
-          {
-            "id": 1,
-            "title": "Reconciliation Duration",
-            "type": "stat",
-            "targets": [
-              {
-                "expr": "gotk_reconcile_duration_seconds{kind!=\"Bucket\"}",
-                "legendFormat": "{{kind}}/{{name}}"
-              }
-            ],
-            "fieldConfig": {
-              "defaults": {
-                "unit": "s"
-              }
-            },
-            "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      "id": null,
+      "title": "Flux Cluster Stats",
+      "tags": ["flux"],
+      "style": "dark",
+      "timezone": "browser",
+      "panels": [
+        {
+          "id": 1,
+          "title": "Reconciliation Duration",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "gotk_reconcile_duration_seconds{kind!=\"Bucket\"}",
+              "legendFormat": "{{kind}}/{{name}}"
+            }
+          ],
+          "fieldConfig": {
+            "defaults": {
+              "unit": "s"
+            }
           },
-          {
-            "id": 2,
-            "title": "Ready Status",
-            "type": "stat", 
-            "targets": [
-              {
-                "expr": "gotk_reconcile_condition{type=\"Ready\"}",
-                "legendFormat": "{{kind}}/{{name}}"
-              }
-            ],
-            "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
-          }
-        ],
-        "time": {
-          "from": "now-1h",
-          "to": "now"
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
         },
-        "refresh": "30s"
-      }
+        {
+          "id": 2,
+          "title": "Ready Status",
+          "type": "stat", 
+          "targets": [
+            {
+              "expr": "gotk_reconcile_condition{type=\"Ready\"}",
+              "legendFormat": "{{kind}}/{{name}}"
+            }
+          ],
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+        }
+      ],
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "refresh": "30s"
     }
