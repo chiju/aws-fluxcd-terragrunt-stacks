@@ -42,7 +42,7 @@ unit "eks" {
 
     # Node configuration
     instance_types   = ["t3.medium"]
-    desired_capacity = 2
+    desired_capacity = 4
     min_capacity     = 1
     max_capacity     = 4
 

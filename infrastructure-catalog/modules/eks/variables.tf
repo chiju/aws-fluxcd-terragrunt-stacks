@@ -86,11 +86,7 @@ variable "cluster_log_retention_days" {
   default     = 7
 }
 
-variable "enable_irsa" {
-  description = "Enable IAM Roles for Service Accounts"
-  type        = bool
-  default     = true
-}
+
 
 variable "node_group_ami_type" {
   description = "AMI type for node groups"
