@@ -106,7 +106,7 @@ resource "kubernetes_manifest" "platform_git_repo" {
       namespace = "flux-system"
     }
     spec = {
-      interval = "1m"
+      interval = "5s"
       url      = var.git_repo_url
       ref = {
         branch = "main"
@@ -130,7 +130,7 @@ resource "kubernetes_manifest" "infrastructure_kustomization" {
       namespace = "flux-system"
     }
     spec = {
-      interval = "10m"
+      interval = "10s"
       sourceRef = {
         kind = "GitRepository"
         name = "platform-apps"
@@ -153,7 +153,7 @@ resource "kubernetes_manifest" "apps_kustomization" {
       namespace = "flux-system"
     }
     spec = {
-      interval = "10m"
+      interval = "10s"
       sourceRef = {
         kind = "GitRepository"
         name = "platform-apps"
