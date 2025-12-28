@@ -3,7 +3,7 @@ kind: Kustomization
 resources:
   - storage-class
   - external-secrets
-  - kube-prometheus-stack
+  # - kube-prometheus-stack  # Temporarily removed for recreation
   - istio-base
   - istiod
   - istio-gateway
