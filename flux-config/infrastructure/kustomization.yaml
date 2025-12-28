@@ -4,3 +4,6 @@ resources:
   - storage-class
   - external-secrets
   - kube-prometheus-stack
+  - istio-base
+  - istiod
+  - istio-gateway
