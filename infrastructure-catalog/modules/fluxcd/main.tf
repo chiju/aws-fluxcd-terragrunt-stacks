@@ -55,7 +55,7 @@ resource "kubernetes_secret_v1" "flux_github_app" {
   depends_on = [helm_release.flux_operator]
 }
 
-# Install FluxInstance using Helm (like ArgoCD app-of-apps pattern)
+# Install FluxInstance with GitOps sync configuration
 resource "helm_release" "flux_instance" {
   name      = "flux-instance"
   chart     = "oci://ghcr.io/controlplaneio-fluxcd/charts/flux-instance"
@@ -94,6 +94,80 @@ resource "helm_release" "flux_instance" {
     helm_release.flux_operator,
     kubernetes_secret_v1.flux_github_app
   ]
+}
+
+# Create GitRepository and Kustomizations via Kubernetes manifests
+resource "kubernetes_manifest" "platform_git_repo" {
+  manifest = {
+    apiVersion = "source.toolkit.fluxcd.io/v1"
+    kind       = "GitRepository"
+    metadata = {
+      name      = "platform-apps"
+      namespace = "flux-system"
+    }
+    spec = {
+      interval = "1m"
+      url      = var.git_repo_url
+      ref = {
+        branch = "main"
+      }
+      secretRef = var.github_app_id != "" ? {
+        name = "flux-system"
+      } : null
+    }
+  }
+
+  depends_on = [helm_release.flux_instance]
+}
+
+resource "kubernetes_manifest" "infrastructure_kustomization" {
+  manifest = {
+    apiVersion = "kustomize.toolkit.fluxcd.io/v1"
+    kind       = "Kustomization"
+    metadata = {
+      name      = "infrastructure"
+      namespace = "flux-system"
+    }
+    spec = {
+      interval = "10m"
+      sourceRef = {
+        kind = "GitRepository"
+        name = "platform-apps"
+      }
+      path  = "./flux-config/infrastructure"
+      prune = true
+      wait  = true
+    }
+  }
+
+  depends_on = [kubernetes_manifest.platform_git_repo]
+}
+
+resource "kubernetes_manifest" "apps_kustomization" {
+  manifest = {
+    apiVersion = "kustomize.toolkit.fluxcd.io/v1"
+    kind       = "Kustomization"
+    metadata = {
+      name      = "apps"
+      namespace = "flux-system"
+    }
+    spec = {
+      interval = "10m"
+      sourceRef = {
+        kind = "GitRepository"
+        name = "platform-apps"
+      }
+      path  = "./flux-config/apps"
+      prune = true
+      dependsOn = [
+        {
+          name = "infrastructure"
+        }
+      ]
+    }
+  }
+
+  depends_on = [kubernetes_manifest.infrastructure_kustomization]
 }
 
 
