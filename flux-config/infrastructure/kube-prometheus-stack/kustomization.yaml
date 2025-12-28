@@ -5,3 +5,4 @@ resources:
   - grafana-helmrepository.yaml
   - configmap.yaml
   - helmrelease.yaml
+  - grafana-virtualservice.yaml
