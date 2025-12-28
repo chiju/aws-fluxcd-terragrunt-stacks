@@ -1,0 +1,78 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: common-gateway
+  namespace: istio-system
+spec:
+  selector:
+    istio: gateway  # Match actual pod label
+  servers:
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*.local"
+    tls:
+      httpsRedirect: true
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - "*.local"
+    tls:
+      mode: SIMPLE
+      credentialName: wildcard-local-tls
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: common-routes
+  namespace: istio-system
+spec:
+  hosts:
+  - grafana.local
+  - argocd.local
+  - prometheus.local
+  - kiali.local
+  - jaeger.local
+  gateways:
+  - common-gateway
+  http:
+  # Grafana Route
+  - match:
+    - uri:
+        prefix: /
+      headers:
+        host:
+          exact: grafana.local
+    route:
+    - destination:
+        host: monitoring-grafana.monitoring.svc.cluster.local
+        port:
+          number: 80
+  # ArgoCD Route
+  - match:
+    - uri:
+        prefix: /
+      headers:
+        host:
+          exact: argocd.local
+    route:
+    - destination:
+        host: argocd-server.argocd.svc.cluster.local
+        port:
+          number: 80
+  # Prometheus Route
+  - match:
+    - uri:
+        prefix: /
+      headers:
+        host:
+          exact: prometheus.local
+    route:
+    - destination:
+        host: monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local
+        port:
+          number: 9090

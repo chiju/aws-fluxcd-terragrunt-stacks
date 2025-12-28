@@ -1,0 +1,5 @@
+gateway:
+  tolerations:
+    - key: node-type
+      value: system
+      effect: NoSchedule

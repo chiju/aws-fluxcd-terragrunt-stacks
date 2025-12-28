@@ -1,0 +1,46 @@
+# External Secrets Operator configuration
+external-secrets:
+  # Service account with IRSA for AWS Secrets Manager access
+  serviceAccount:
+    annotations:
+      eks.amazonaws.com/role-arn: "arn:aws:iam::575491070504:role/tbyte-dev-eso-role"
+  
+  # Install CRDs
+  installCRDs: true
+  
+  # Controller configuration
+  replicaCount: 1
+  
+  # Global tolerations for all components
+  global:
+    tolerations:
+      - key: "node-type"
+        operator: "Equal"
+        value: "system"
+        effect: "NoSchedule"
+  nodeSelector:
+    eks.amazonaws.com/nodegroup: "tbyte-dev-system-nodes"
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+  
+  # Security context
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+    readOnlyRootFilesystem: true
+    runAsNonRoot: true
+    runAsUser: 65534
+  
+  # Pod security context
+  podSecurityContext:
+    fsGroup: 65534
+    runAsNonRoot: true
+    runAsUser: 65534

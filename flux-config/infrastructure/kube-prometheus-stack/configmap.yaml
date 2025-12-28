@@ -1,0 +1,183 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kube-prometheus-stack-values
+  namespace: flux-system
+data:
+  values.yaml: |
+    kube-prometheus-stack:
+      # Global tolerations for all components
+      global:
+        tolerations:
+          - key: "node-type"
+            operator: "Equal"
+            value: "system"
+            effect: "NoSchedule"
+      
+      # Admission webhook tolerations
+      prometheusOperator:
+        tolerations:
+          - key: "node-type"
+            operator: "Equal"
+            value: "system"
+            effect: "NoSchedule"
+        admissionWebhooks:
+          patch:
+            tolerations:
+              - key: "node-type"
+                operator: "Equal"
+                value: "system"
+                effect: "NoSchedule"
+      
+      # Kube-state-metrics tolerations
+      kube-state-metrics:
+        tolerations:
+          - key: "node-type"
+            operator: "Equal"
+            value: "system"
+            effect: "NoSchedule"
+      
+      prometheus:
+        prometheusSpec:
+          # Schedule on system nodes
+          tolerations:
+            - key: "node-type"
+              operator: "Equal"
+              value: "system"
+              effect: "NoSchedule"
+          nodeSelector:
+            eks.amazonaws.com/nodegroup: "tbyte-dev-system-nodes"
+          retention: 15d
+          retentionSize: 45GB
+          # Enable remote write receiver for Tempo metrics generator
+          enableRemoteWriteReceiver: true
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: 1000m
+              memory: 4Gi
+          # Persistent storage for Prometheus TSDB
+          storageSpec:
+            volumeClaimTemplate:
+              spec:
+                storageClassName: gp3
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 50Gi
+          # Allow Prometheus to discover ServiceMonitors in all namespaces
+          serviceMonitorNamespaceSelector: {}
+          serviceMonitorSelector:
+            matchLabels:
+              release: monitoring
+      grafana:
+        enabled: true
+        # Schedule on system nodes
+        tolerations:
+          - key: "node-type"
+            operator: "Equal"
+            value: "system"
+            effect: "NoSchedule"
+        nodeSelector:
+          eks.amazonaws.com/nodegroup: "tbyte-dev-system-nodes"
+        admin:
+          existingSecret: grafana-admin-secret
+          userKey: admin-user
+          passwordKey: admin-password
+        # Persistent storage for Grafana dashboards
+        persistence:
+          enabled: true
+          storageClassName: gp3
+          accessModes: ["ReadWriteOnce"]
+          size: 10Gi
+        grafana.ini:
+          dashboards:
+            min_refresh_interval: 1s
+        serviceAccount:
+          annotations:
+            eks.amazonaws.com/role-arn: ""
+        sidecar:
+          dashboards:
+            enabled: true
+            label: grafana_dashboard
+            labelValue: "1"
+        additionalDataSources:
+          - name: Loki
+            type: loki
+            url: http://loki-gateway.loki.svc.cluster.local
+            access: proxy
+            isDefault: false
+          - name: Tempo
+            type: tempo
+            url: http://tempo.tempo.svc.cluster.local:3200
+            access: proxy
+            isDefault: false
+            jsonData:
+              nodeGraph:
+                enabled: true
+              serviceMap:
+                datasourceUid: tempo-service-graph
+              search:
+                hide: false
+              traceQuery:
+                timeShiftEnabled: true
+                spanStartTimeShift: 1h
+                spanEndTimeShift: 1h
+              spanBar:
+                type: Tag
+                tag: http.status_code
+          - name: Tempo Service Graph
+            uid: tempo-service-graph
+            type: prometheus
+            url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
+            access: proxy
+            isDefault: false
+          - name: CloudWatch
+            type: cloudwatch
+            access: proxy
+            jsonData:
+              defaultRegion: eu-central-1
+              authType: default
+            isDefault: false
+          - name: CloudWatch Logs
+            type: cloudwatch
+            access: proxy
+            jsonData:
+              defaultRegion: eu-central-1
+              authType: default
+              logGroups:
+                - name: "/aws/eks/eks-lab-argocd/cluster"
+                - name: "/aws/vpc/flowlogs/eks-lab-argocd"
+            isDefault: false
+      
+      # Node exporter with high priority and system node scheduling
+      prometheus-node-exporter:
+        priorityClassName: system-node-critical
+        tolerations:
+          - key: "node-type"
+            operator: "Equal"
+            value: "system"
+            effect: "NoSchedule"
+          # Also tolerate all taints to run on all nodes for monitoring
+          - operator: "Exists"
+      
+      # AlertManager with persistence and system node scheduling
+      alertmanager:
+        alertmanagerSpec:
+          tolerations:
+            - key: "node-type"
+              operator: "Equal"
+              value: "system"
+              effect: "NoSchedule"
+          nodeSelector:
+            eks.amazonaws.com/nodegroup: "tbyte-dev-system-nodes"
+          storage:
+            volumeClaimTemplate:
+              spec:
+                storageClassName: gp3
+                accessModes: ["ReadWriteOnce"]
+                resources:
+                  requests:
+                    storage: 10Gi

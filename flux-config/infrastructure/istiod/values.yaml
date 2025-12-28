@@ -1,0 +1,17 @@
+# Istio Control Plane Configuration
+
+istiod:
+  # Enable telemetry v2
+  telemetry:
+    v2:
+      enabled: true
+  
+  # Pilot configuration
+  pilot:
+    env:
+      EXTERNAL_ISTIOD: false
+    tolerations:
+      - key: "node-type"
+        operator: "Equal"
+        value: "system"
+        effect: "NoSchedule"

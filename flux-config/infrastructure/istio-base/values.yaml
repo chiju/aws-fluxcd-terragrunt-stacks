@@ -1,0 +1,6 @@
+# Istio Base Configuration
+# Contains cluster-wide CRDs
+
+base:
+  # Set default revision for resource validation
+  defaultRevision: default

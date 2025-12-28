@@ -225,6 +225,85 @@ resource "aws_iam_openid_connect_provider" "cluster" {
   )
 }
 
+# EKS Addons - Best practice for managing core components
+resource "aws_eks_addon" "vpc_cni" {
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "vpc-cni"
+  addon_version               = "v1.20.4-eksbuild.1"
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.name}-vpc-cni-addon"
+    }
+  )
+}
+
+resource "aws_eks_addon" "coredns" {
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "coredns"
+  addon_version               = "v1.11.3-eksbuild.2"
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.name}-coredns-addon"
+    }
+  )
+}
+
+resource "aws_eks_addon" "kube_proxy" {
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "kube-proxy"
+  addon_version               = "v1.34.2-eksbuild.1"
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.name}-kube-proxy-addon"
+    }
+  )
+}
+
+# EBS CSI Driver for persistent volumes
+resource "aws_eks_addon" "ebs_csi_driver" {
+  cluster_name                = aws_eks_cluster.main.name
+  addon_name                  = "aws-ebs-csi-driver"
+  resolve_conflicts_on_create = "OVERWRITE"
+  resolve_conflicts_on_update = "OVERWRITE"
+  service_account_role_arn    = aws_iam_role.ebs_csi_driver.arn
+
+  depends_on = [
+    aws_eks_node_group.main,
+    aws_iam_role_policy_attachment.ebs_csi_driver_policy
+  ]
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.name}-ebs-csi-driver-addon"
+    }
+  )
+}
+
 # EKS Access Entry for GitHub Actions
 resource "aws_eks_access_entry" "github_actions" {
   count         = var.github_role_arn != null ? 1 : 0

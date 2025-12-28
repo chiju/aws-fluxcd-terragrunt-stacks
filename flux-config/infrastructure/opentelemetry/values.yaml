@@ -1,0 +1,23 @@
+# OpenTelemetry Operator Configuration
+# Values for the opentelemetry-operator dependency chart
+opentelemetry-operator:
+  # Root level tolerations for the operator pod
+  tolerations:
+    - key: "node-type"
+      operator: "Equal"
+      value: "system"
+      effect: "NoSchedule"
+
+  # Node selector for system nodes
+  nodeSelector:
+    eks.amazonaws.com/nodegroup: "tbyte-dev-system-nodes"
+
+  # Manager container resources
+  manager:
+    resources:
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi

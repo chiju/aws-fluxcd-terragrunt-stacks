@@ -1,0 +1,19 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: wildcard-local-tls
+  namespace: istio-system
+spec:
+  secretName: wildcard-local-tls
+  dnsNames:
+  - "*.local"
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
