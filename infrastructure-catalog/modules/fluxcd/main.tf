@@ -35,35 +35,22 @@ resource "helm_release" "flux_operator" {
   depends_on = [data.aws_eks_cluster.cluster]
 }
 
-# Create GitHub App secret using null_resource to run flux CLI
-resource "null_resource" "flux_github_app_secret" {
+# Create GitHub App secret with correct FluxCD field names
+resource "kubernetes_secret_v1" "flux_github_app" {
   count = var.github_app_id != "" ? 1 : 0
 
-  provisioner "local-exec" {
-    command = <<-EOT
-      # Write private key to temporary file
-      echo "${var.github_app_private_key}" > /tmp/github-app-private-key.pem
-      
-      # Create secret using flux CLI
-      flux create secret githubapp flux-system \
-        --app-id="${var.github_app_id}" \
-        --app-installation-id="${var.github_app_installation_id}" \
-        --app-private-key="/tmp/github-app-private-key.pem" \
-        --namespace=flux-system \
-        --export > /tmp/flux-github-app-secret.yaml
-      
-      # Apply the secret
-      kubectl apply -f /tmp/flux-github-app-secret.yaml
-      
-      # Clean up temporary files
-      rm -f /tmp/github-app-private-key.pem /tmp/flux-github-app-secret.yaml
-    EOT
+  metadata {
+    name      = "flux-system"
+    namespace = "flux-system"
   }
 
-  provisioner "local-exec" {
-    when    = destroy
-    command = "kubectl delete secret flux-system -n flux-system --ignore-not-found=true"
+  data = {
+    githubAppID             = var.github_app_id
+    githubAppInstallationID = var.github_app_installation_id
+    githubAppPrivateKey     = var.github_app_private_key
   }
+
+  type = "Opaque"
 
   depends_on = [helm_release.flux_operator]
 }
@@ -105,7 +92,7 @@ resource "helm_release" "flux_instance" {
 
   depends_on = [
     helm_release.flux_operator,
-    null_resource.flux_github_app_secret
+    kubernetes_secret_v1.flux_github_app
   ]
 }
 
@@ -131,7 +118,7 @@ resource "kubernetes_manifest" "platform_git_repo" {
     }
   }
 
-  depends_on = [helm_release.flux_instance, null_resource.flux_github_app_secret]
+  depends_on = [helm_release.flux_instance, kubernetes_secret_v1.flux_github_app]
 }
 
 resource "kubernetes_manifest" "infrastructure_kustomization" {
