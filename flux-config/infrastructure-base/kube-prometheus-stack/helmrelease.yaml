@@ -17,6 +17,9 @@ spec:
   targetNamespace: monitoring
   install:
     createNamespace: true
+    crds: CreateReplace
+  upgrade:
+    crds: CreateReplace
   valuesFrom:
     - kind: ConfigMap
       name: kube-prometheus-stack-values

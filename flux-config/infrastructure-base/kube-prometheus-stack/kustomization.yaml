@@ -6,7 +6,6 @@ resources:
   - configmap.yaml
   - helmrelease.yaml
   - grafana-virtualservice.yaml
-  - flux-podmonitor.yaml
   - flux-dashboard-14937.yaml
 
 patches:
