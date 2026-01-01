@@ -6,7 +6,7 @@ metadata:
   labels:
     app.kubernetes.io/part-of: flux
     app.kubernetes.io/component: monitoring
-    release: monitoring
+    release: monitoring-kube-prometheus-stack
 spec:
   namespaceSelector:
     matchNames:
