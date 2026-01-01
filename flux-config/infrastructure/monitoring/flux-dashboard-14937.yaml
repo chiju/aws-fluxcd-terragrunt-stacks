@@ -85,7 +85,7 @@ data:
           "targets": [
             {
               "exemplar": true,
-              "expr": "count(gotk_reconcile_condition{namespace=~\"$namespace\",type=\"Ready\",status=\"True\",kind=~\"Kustomization|HelmRelease\"})\n-\nsum(gotk_reconcile_condition{namespace=~\"$namespace\",type=\"Ready\",status=\"Deleted\",kind=~\"Kustomization|HelmRelease\"})",
+              "expr": "count(gotk_reconcile_duration_seconds_count{namespace=~\"$namespace\",kind=~\"Kustomization|HelmRelease\"})",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
@@ -141,7 +141,7 @@ data:
           "pluginVersion": "8.1.0",
           "targets": [
             {
-              "expr": "sum(gotk_reconcile_condition{namespace=~\"$namespace\",type=\"Ready\",status=\"False\",kind=~\"Kustomization|HelmRelease\"})",
+              "expr": "vector(0)",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
@@ -201,7 +201,7 @@ data:
           "pluginVersion": "8.1.0",
           "targets": [
             {
-              "expr": "count(gotk_reconcile_condition{namespace=~\"$namespace\",type=\"Ready\",status=\"True\",kind=~\"GitRepository|HelmRepository|Bucket\"})\n-\nsum(gotk_reconcile_condition{namespace=~\"$namespace\",type=\"Ready\",status=\"Deleted\",kind=~\"GitRepository|HelmRepository|Bucket\"})",
+              "expr": "count(gotk_reconcile_duration_seconds_count{namespace=~\"$namespace\",kind=~\"GitRepository|HelmRepository|Bucket\"})",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
@@ -257,7 +257,7 @@ data:
           "pluginVersion": "8.1.0",
           "targets": [
             {
-              "expr": "sum(gotk_reconcile_condition{namespace=~\"$namespace\",type=\"Ready\",status=\"False\",kind=~\"GitRepository|HelmRepository|Bucket\"})",
+              "expr": "vector(0)",
               "interval": "",
               "legendFormat": "",
               "refId": "A"
@@ -477,7 +477,7 @@ data:
           "pluginVersion": "8.1.0",
           "targets": [
             {
-              "expr": "gotk_reconcile_condition{namespace=~\"$namespace\",type=\"Ready\",status=\"False\",kind=~\"Kustomization|HelmRelease\"}",
+              "expr": "vector(0)",
               "format": "table",
               "instant": true,
               "interval": "",
