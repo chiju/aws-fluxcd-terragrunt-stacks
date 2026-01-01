@@ -1,11 +1,12 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # CRD providers first
+  # Storage class must be first (used by prometheus stack)
+  - storage-class
+  # CRD providers
   - kube-prometheus-stack
   - istio-base
   # Then dependent resources
-  - storage-class
   - external-secrets
   - istiod
   - istio-gateway
