@@ -37,7 +37,7 @@ resource "helm_release" "flux_operator" {
 
 # Create GitHub App secret with correct FluxCD field names
 resource "kubernetes_secret_v1" "flux_github_app" {
-  count = var.github_app_id != "" ? 1 : 0
+  count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
 
   metadata {
     name      = "flux-system"
@@ -79,14 +79,6 @@ resource "helm_release" "flux_instance" {
         networkPolicy = true
         domain        = "cluster.local"
       }
-      sync = {
-        kind       = "GitRepository"
-        provider   = "github"
-        url        = var.git_repo_url
-        ref        = "refs/heads/main"
-        path       = var.target_path
-        pullSecret = var.github_app_id != "" ? "flux-system" : null
-      }
     })
   ]
 
@@ -96,8 +88,32 @@ resource "helm_release" "flux_instance" {
   ]
 }
 
+# Wait for FluxCD CRDs to be available
+resource "null_resource" "wait_for_flux_crds" {
+  count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
+  
+  provisioner "local-exec" {
+    command = <<-EOT
+      echo "Waiting for FluxCD CRDs to be available..."
+      for i in {1..30}; do
+        if kubectl get crd gitrepositories.source.toolkit.fluxcd.io --context=arn:aws:eks:${var.aws_region}:${var.account_id}:cluster/${var.cluster_name} 2>/dev/null; then
+          echo "GitRepository CRD is available"
+          exit 0
+        fi
+        echo "Attempt $i: GitRepository CRD not yet available, waiting 10 seconds..."
+        sleep 10
+      done
+      echo "Timeout waiting for GitRepository CRD"
+      exit 1
+    EOT
+  }
+  
+  depends_on = [helm_release.flux_instance]
+}
+
 # Create GitRepository and Kustomizations via Kubernetes manifests
 resource "kubernetes_manifest" "platform_git_repo" {
+  count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
   manifest = {
     apiVersion = "source.toolkit.fluxcd.io/v1"
     kind       = "GitRepository"
@@ -118,10 +134,14 @@ resource "kubernetes_manifest" "platform_git_repo" {
     }
   }
 
-  depends_on = [helm_release.flux_instance, kubernetes_secret_v1.flux_github_app]
+  depends_on = [
+    null_resource.wait_for_flux_crds,
+    kubernetes_secret_v1.flux_github_app
+  ]
 }
 
 resource "kubernetes_manifest" "infrastructure_kustomization" {
+  count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
   manifest = {
     apiVersion = "kustomize.toolkit.fluxcd.io/v1"
     kind       = "Kustomization"
@@ -145,6 +165,7 @@ resource "kubernetes_manifest" "infrastructure_kustomization" {
 }
 
 resource "kubernetes_manifest" "apps_kustomization" {
+  count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
   manifest = {
     apiVersion = "kustomize.toolkit.fluxcd.io/v1"
     kind       = "Kustomization"
@@ -170,5 +191,3 @@ resource "kubernetes_manifest" "apps_kustomization" {
 
   depends_on = [kubernetes_manifest.infrastructure_kustomization]
 }
-
-
