@@ -5,8 +5,6 @@ resources:
   - grafana-helmrepository.yaml
   - configmap.yaml
   - helmrelease.yaml
-  - grafana-virtualservice.yaml
-  - flux-dashboard-14937.yaml
 
 patches:
   - patch: |

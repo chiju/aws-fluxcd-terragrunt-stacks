@@ -5,3 +5,5 @@ resources:
   - istiod
   - istio-gateway
   - flux-monitoring
+  - grafana-virtualservice.yaml
+  - flux-dashboard-14937.yaml
