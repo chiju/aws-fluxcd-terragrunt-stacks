@@ -2,7 +2,7 @@ apiVersion: monitoring.coreos.com/v1
 kind: PodMonitor
 metadata:
   name: flux-system
-  namespace: flux-system
+  namespace: monitoring
   labels:
     app.kubernetes.io/part-of: flux
     app.kubernetes.io/component: monitoring
@@ -23,4 +23,5 @@ spec:
       - image-automation-controller
       - image-reflector-controller
   podMetricsEndpoints:
-  - port: http-prom
+  - targetPort: 8080
+    path: /metrics
