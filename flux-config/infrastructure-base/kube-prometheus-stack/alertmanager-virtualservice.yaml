@@ -14,6 +14,6 @@ spec:
         prefix: /
     route:
     - destination:
-        host: monitoring-kube-prometheus-stack-alertmanager
+        host: monitoring-kube-prometheus-alertmanager
         port:
           number: 9093
