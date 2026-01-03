@@ -62,39 +62,6 @@ resource "kubernetes_secret_v1" "flux_github_app" {
 
 # Install FluxInstance with GitOps sync configuration
 resource "helm_release" "flux_instance" {
-  name      = "flux-instance"
-  chart     = "oci://ghcr.io/controlplaneio-fluxcd/charts/flux-instance"
-  namespace = "flux-system"
-
-  values = [
-    yamlencode({
-      distribution = {
-        version  = "2.7.5"
-        registry = "ghcr.io/fluxcd"
-      }
-      components = [
-        "source-controller",
-        "kustomize-controller",
-        "helm-controller",
-        "notification-controller"
-      ]
-      cluster = {
-        type          = "kubernetes"
-        multitenant   = false
-        networkPolicy = true
-        domain        = "cluster.local"
-      }
-    })
-  ]
-
-  depends_on = [
-    helm_release.flux_operator,
-    kubernetes_secret_v1.flux_github_app
-  ]
-}
-
-# Create FluxInstance for GitOps bootstrap via Helm
-resource "helm_release" "flux_instance" {
   count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
 
   name       = "flux-instance"
