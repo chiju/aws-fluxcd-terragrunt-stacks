@@ -8,6 +8,14 @@ spec:
     istio: gateway
   servers:
   - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*.local"
+    tls:
+      httpsRedirect: true
+  - port:
       number: 443
       name: https
       protocol: HTTPS
