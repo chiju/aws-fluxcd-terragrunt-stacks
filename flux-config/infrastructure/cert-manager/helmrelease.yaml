@@ -2,9 +2,11 @@ apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: cert-manager
-  namespace: cert-manager
+  namespace: flux-system
 spec:
   interval: 30m
+  releaseName: cert-manager
+  targetNamespace: cert-manager
   chart:
     spec:
       chart: cert-manager
@@ -22,16 +24,3 @@ spec:
   values:
     crds:
       enabled: true
-    global:
-      leaderElection:
-        namespace: cert-manager
-  postRenderers:
-    - kustomize:
-        patches:
-          - target:
-              kind: Job
-              name: cert-manager-startupapicheck
-            patch: |
-              - op: add
-                path: /spec/template/spec/containers/0/args/-
-                value: --verbose
