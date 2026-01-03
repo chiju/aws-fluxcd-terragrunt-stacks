@@ -11,6 +11,6 @@ spec:
   http:
   - route:
     - destination:
-        host: tempo.tempo-system.svc.cluster.local
+        host: tempo-system-tempo.tempo-system.svc.cluster.local
         port:
-          number: 3100
+          number: 3200
