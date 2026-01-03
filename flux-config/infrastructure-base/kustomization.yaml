@@ -3,3 +3,4 @@ kind: Kustomization
 # Base infrastructure components (CRDs, operators, etc.)
 resources:
   - istio-base
+  - kube-prometheus-stack
