@@ -138,6 +138,14 @@ resource "kubernetes_manifest" "platform_git_repo" {
     }
   }
 
+  server_side_apply = true
+  wait {
+    condition {
+      type   = "Ready"
+      status = "True"
+    }
+  }
+
   depends_on = [time_sleep.wait_for_flux_crds]
 }
 
@@ -161,6 +169,14 @@ resource "kubernetes_manifest" "platform_kustomization" {
       path  = "./flux-config/clusters/dev"
       prune = true
       wait  = true
+    }
+  }
+
+  server_side_apply = true
+  wait {
+    condition {
+      type   = "Ready"
+      status = "True"
     }
   }
 
