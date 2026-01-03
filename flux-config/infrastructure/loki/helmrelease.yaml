@@ -15,7 +15,7 @@ spec:
         name: grafana
         namespace: flux-system
   values:
-    deploymentMode: SingleBinary
+    deploymentMode: SingleBinary<->SimpleScalable
     loki:
       auth_enabled: false
       commonConfig:
