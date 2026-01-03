@@ -13,13 +13,3 @@ spec:
       protocol: HTTP
     hosts:
     - "*.local"
-    httpsRedirect: true
-  - port:
-      number: 443
-      name: https
-      protocol: HTTPS
-    hosts:
-    - "*.local"
-    tls:
-      mode: SIMPLE
-      credentialName: local-tls-secret
