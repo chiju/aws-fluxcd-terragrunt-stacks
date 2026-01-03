@@ -111,7 +111,7 @@ data:
             isDefault: false
           - name: Tempo
             type: tempo
-            url: http://tempo.tempo.svc.cluster.local:3200
+            url: http://tempo-system-tempo.tempo-system.svc.cluster.local:3200
             access: proxy
             isDefault: false
             jsonData:
