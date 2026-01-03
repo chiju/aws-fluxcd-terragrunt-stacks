@@ -104,3 +104,56 @@ resource "helm_release" "flux_instance" {
     kubernetes_secret_v1.flux_github_app
   ]
 }
+
+# Create GitRepository for GitOps sync
+resource "kubernetes_manifest" "platform_git_repo" {
+  count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
+  
+  manifest = {
+    apiVersion = "source.toolkit.fluxcd.io/v1"
+    kind       = "GitRepository"
+    metadata = {
+      name      = "platform-apps"
+      namespace = "flux-system"
+    }
+    spec = {
+      interval = "5s"
+      url      = var.git_repo_url
+      ref = {
+        branch = "main"
+      }
+      provider = "github"
+      secretRef = {
+        name = "flux-system"
+      }
+    }
+  }
+
+  depends_on = [helm_release.flux_instance]
+}
+
+# Create Kustomization for GitOps sync
+resource "kubernetes_manifest" "platform_kustomization" {
+  count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
+  
+  manifest = {
+    apiVersion = "kustomize.toolkit.fluxcd.io/v1"
+    kind       = "Kustomization"
+    metadata = {
+      name      = "platform-apps"
+      namespace = "flux-system"
+    }
+    spec = {
+      interval = "10s"
+      sourceRef = {
+        kind = "GitRepository"
+        name = "platform-apps"
+      }
+      path  = "./flux-config/clusters/dev"
+      prune = true
+      wait  = true
+    }
+  }
+
+  depends_on = [kubernetes_manifest.platform_git_repo]
+}
