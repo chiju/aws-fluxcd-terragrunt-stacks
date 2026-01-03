@@ -5,3 +5,4 @@ resources:
   - istiod
   - istio-gateway
   - kiali
+  - cert-manager
