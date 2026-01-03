@@ -1,0 +1,19 @@
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  hosts:
+  - alertmanager.local
+  gateways:
+  - istio-system/common-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: monitoring-kube-prometheus-stack-alertmanager
+        port:
+          number: 9093

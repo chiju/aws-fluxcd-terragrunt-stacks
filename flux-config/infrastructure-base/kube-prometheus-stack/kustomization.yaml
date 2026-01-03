@@ -5,6 +5,9 @@ resources:
   - grafana-helmrepository.yaml
   - configmap.yaml
   - helmrelease.yaml
+  - prometheus-virtualservice.yaml
+  - grafana-virtualservice.yaml
+  - alertmanager-virtualservice.yaml
 
 patches:
   - patch: |
