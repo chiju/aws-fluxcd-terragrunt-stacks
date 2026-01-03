@@ -105,80 +105,61 @@ resource "helm_release" "flux_instance" {
   ]
 }
 
-# Wait for FluxCD CRDs to be available
-resource "time_sleep" "wait_for_flux_crds" {
-  count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
-
-  depends_on = [helm_release.flux_instance]
-
-  create_duration = "60s"
 }
 
-# Create GitRepository for GitOps sync
-resource "kubernetes_manifest" "platform_git_repo" {
+# Create GitOps resources using null_resource to avoid CRD timing issues
+resource "null_resource" "create_gitops_resources" {
   count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
 
-  manifest = {
-    apiVersion = "source.toolkit.fluxcd.io/v1"
-    kind       = "GitRepository"
-    metadata = {
-      name      = "platform-apps"
-      namespace = "flux-system"
-    }
-    spec = {
-      interval = "5s"
-      url      = var.git_repo_url
-      ref = {
-        branch = "main"
-      }
-      provider = "github"
-      secretRef = {
-        name = "flux-system"
-      }
-    }
+  provisioner "local-exec" {
+    command = <<-EOT
+      # Wait for FluxCD CRDs to be available
+      kubectl wait --for=condition=established crd/gitrepositories.source.toolkit.fluxcd.io --timeout=300s
+      kubectl wait --for=condition=established crd/kustomizations.kustomize.toolkit.fluxcd.io --timeout=300s
+      
+      # Create GitRepository and Kustomization
+      kubectl apply -f - <<EOF
+      apiVersion: source.toolkit.fluxcd.io/v1
+      kind: GitRepository
+      metadata:
+        name: platform-apps
+        namespace: flux-system
+      spec:
+        interval: 5s
+        url: ${var.git_repo_url}
+        ref:
+          branch: main
+        provider: github
+        secretRef:
+          name: flux-system
+      ---
+      apiVersion: kustomize.toolkit.fluxcd.io/v1
+      kind: Kustomization
+      metadata:
+        name: platform-apps
+        namespace: flux-system
+      spec:
+        interval: 10s
+        sourceRef:
+          kind: GitRepository
+          name: platform-apps
+        path: ./flux-config/clusters/dev
+        prune: true
+        wait: true
+      EOF
+    EOT
   }
 
-  server_side_apply = true
-  wait {
-    condition {
-      type   = "Ready"
-      status = "True"
-    }
+  provisioner "local-exec" {
+    when    = destroy
+    command = <<-EOT
+      kubectl delete kustomization platform-apps -n flux-system --ignore-not-found=true
+      kubectl delete gitrepository platform-apps -n flux-system --ignore-not-found=true
+    EOT
   }
 
-  depends_on = [time_sleep.wait_for_flux_crds]
-}
-
-# Create Kustomization for GitOps sync
-resource "kubernetes_manifest" "platform_kustomization" {
-  count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
-
-  manifest = {
-    apiVersion = "kustomize.toolkit.fluxcd.io/v1"
-    kind       = "Kustomization"
-    metadata = {
-      name      = "platform-apps"
-      namespace = "flux-system"
-    }
-    spec = {
-      interval = "10s"
-      sourceRef = {
-        kind = "GitRepository"
-        name = "platform-apps"
-      }
-      path  = "./flux-config/clusters/dev"
-      prune = true
-      wait  = true
-    }
-  }
-
-  server_side_apply = true
-  wait {
-    condition {
-      type   = "Ready"
-      status = "True"
-    }
-  }
-
-  depends_on = [kubernetes_manifest.platform_git_repo]
+  depends_on = [
+    helm_release.flux_instance,
+    time_sleep.wait_for_flux_crds
+  ]
 }
