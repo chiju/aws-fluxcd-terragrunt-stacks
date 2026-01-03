@@ -154,8 +154,10 @@ resource "null_resource" "create_gitops_resources" {
   provisioner "local-exec" {
     when    = destroy
     command = <<-EOT
-      kubectl delete kustomization platform-apps -n flux-system --ignore-not-found=true
-      kubectl delete gitrepository platform-apps -n flux-system --ignore-not-found=true
+      # Configure kubectl and delete GitOps resources (ignore errors if cluster is gone)
+      aws eks update-kubeconfig --region eu-central-1 --name ${var.cluster_name} || true
+      kubectl delete kustomization platform-apps -n flux-system --ignore-not-found=true || true
+      kubectl delete gitrepository platform-apps -n flux-system --ignore-not-found=true || true
     EOT
   }
 
