@@ -25,3 +25,13 @@ spec:
     global:
       leaderElection:
         namespace: cert-manager
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: Job
+              name: cert-manager-startupapicheck
+            patch: |
+              - op: add
+                path: /spec/template/spec/containers/0/args/-
+                value: --verbose
