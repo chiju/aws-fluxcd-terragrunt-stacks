@@ -111,6 +111,9 @@ resource "null_resource" "create_gitops_resources" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      # Configure kubectl for EKS cluster
+      aws eks update-kubeconfig --region eu-central-1 --name ${var.cluster_name}
+      
       # Wait for FluxCD CRDs to be available
       kubectl wait --for=condition=established crd/gitrepositories.source.toolkit.fluxcd.io --timeout=300s
       kubectl wait --for=condition=established crd/kustomizations.kustomize.toolkit.fluxcd.io --timeout=300s
