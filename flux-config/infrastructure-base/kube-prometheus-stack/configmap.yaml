@@ -106,7 +106,7 @@ data:
         additionalDataSources:
           - name: Loki
             type: loki
-            url: http://loki-gateway.loki.svc.cluster.local
+            url: http://loki-gateway.loki-system.svc.cluster.local/loki
             access: proxy
             isDefault: false
           - name: Tempo

@@ -8,3 +8,5 @@ resources:
   - cert-manager
   - opentelemetry
   - tempo
+  - loki
+  - alloy
