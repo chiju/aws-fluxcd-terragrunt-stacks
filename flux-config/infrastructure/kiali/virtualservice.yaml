@@ -7,7 +7,7 @@ spec:
   hosts:
   - kiali.local
   gateways:
-  - istio-gateway
+  - common-gateway
   http:
   - match:
     - uri:
