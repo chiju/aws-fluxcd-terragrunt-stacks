@@ -1,6 +1,4 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-resources:
-  - storage-class
-  - kube-prometheus-stack
-  - istio-base
+# Base infrastructure components (CRDs, operators, etc.)
+resources: []

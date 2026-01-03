@@ -1,0 +1,15 @@
+apiVersion: kustomize.toolkit.fluxcd.io/v1
+kind: Kustomization
+metadata:
+  name: infrastructure
+  namespace: flux-system
+spec:
+  dependsOn:
+    - name: infrastructure-base
+  interval: 10m
+  sourceRef:
+    kind: GitRepository
+    name: platform-apps
+  path: ./flux-config/infrastructure
+  prune: true
+  wait: true
