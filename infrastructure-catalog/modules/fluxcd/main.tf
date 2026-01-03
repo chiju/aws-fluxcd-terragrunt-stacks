@@ -91,7 +91,7 @@ resource "helm_release" "flux_instance" {
 # Wait for FluxCD CRDs to be available
 resource "null_resource" "wait_for_flux_crds" {
   count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
-  
+
   provisioner "local-exec" {
     command = <<-EOT
       echo "Waiting for FluxCD CRDs to be available..."
@@ -107,7 +107,7 @@ resource "null_resource" "wait_for_flux_crds" {
       exit 1
     EOT
   }
-  
+
   depends_on = [helm_release.flux_instance]
 }
 
