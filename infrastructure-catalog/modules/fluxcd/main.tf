@@ -95,7 +95,7 @@ resource "null_resource" "wait_for_flux_crds" {
   provisioner "local-exec" {
     command = <<-EOT
       echo "Waiting for FluxCD CRDs to be available..."
-      for i in {1..30}; do
+      for i in $(seq 1 60); do
         if kubectl get crd gitrepositories.source.toolkit.fluxcd.io --context=arn:aws:eks:${var.aws_region}:${var.account_id}:cluster/${var.cluster_name} 2>/dev/null; then
           echo "GitRepository CRD is available"
           exit 0
