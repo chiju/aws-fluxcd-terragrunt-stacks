@@ -105,6 +105,15 @@ resource "helm_release" "flux_instance" {
   ]
 }
 
+# Wait for FluxCD CRDs to be available
+resource "time_sleep" "wait_for_flux_crds" {
+  count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
+
+  depends_on = [helm_release.flux_instance]
+
+  create_duration = "60s"
+}
+
 # Create GitRepository for GitOps sync
 resource "kubernetes_manifest" "platform_git_repo" {
   count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
@@ -129,7 +138,7 @@ resource "kubernetes_manifest" "platform_git_repo" {
     }
   }
 
-  depends_on = [helm_release.flux_instance]
+  depends_on = [time_sleep.wait_for_flux_crds]
 }
 
 # Create Kustomization for GitOps sync
