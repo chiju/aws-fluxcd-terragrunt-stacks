@@ -108,7 +108,7 @@ resource "helm_release" "flux_instance" {
 # Create GitRepository for GitOps sync
 resource "kubernetes_manifest" "platform_git_repo" {
   count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
-  
+
   manifest = {
     apiVersion = "source.toolkit.fluxcd.io/v1"
     kind       = "GitRepository"
@@ -135,7 +135,7 @@ resource "kubernetes_manifest" "platform_git_repo" {
 # Create Kustomization for GitOps sync
 resource "kubernetes_manifest" "platform_kustomization" {
   count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
-  
+
   manifest = {
     apiVersion = "kustomize.toolkit.fluxcd.io/v1"
     kind       = "Kustomization"
