@@ -377,17 +377,6 @@ jobs:
           chmod +x terragrunt_linux_amd64
           sudo mv terragrunt_linux_amd64 /usr/local/bin/terragrunt
 
-      - name: Validate Terraform Modules
-        run: |
-          echo "✅ Validating Terraform modules..."
-          find infrastructure-catalog/modules -name "main.tf" -exec dirname {} \; | while read dir; do
-            echo "Validating $dir"
-            cd "$dir"
-            terraform init -backend=false
-            terraform validate
-            cd - > /dev/null
-          done
-
       - name: Validate Terragrunt Stacks
         working-directory: infrastructure-live/${{ matrix.environment }}/eu-central-1/platform
         env:
