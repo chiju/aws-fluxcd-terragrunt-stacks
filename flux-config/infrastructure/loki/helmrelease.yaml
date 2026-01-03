@@ -15,54 +15,13 @@ spec:
         name: grafana
         namespace: flux-system
   values:
-    deploymentMode: SingleBinary<->SimpleScalable
+    deploymentMode: SingleBinary
     loki:
-      auth_enabled: false
       commonConfig:
         replication_factor: 1
       storage:
         type: filesystem
     singleBinary:
       replicas: 1
-      persistence:
-        enabled: true
-        storageClass: gp3
-        size: 10Gi
-    # Explicitly disable SimpleScalable mode components
-    backend:
-      replicas: 0
-    read:
-      replicas: 0  
-    write:
-      replicas: 0
-    ingester:
-      replicas: 0
-    querier:
-      replicas: 0
-    queryFrontend:
-      replicas: 0
-    queryScheduler:
-      replicas: 0
-    distributor:
-      replicas: 0
-    compactor:
-      replicas: 0
-    indexGateway:
-      replicas: 0
-    bloomCompactor:
-      replicas: 0
-    bloomGateway:
-      replicas: 0
-    # Disable other components
-    chunksCache:
-      enabled: false
-    resultsCache:
-      enabled: false
-    lokiCanary:
-      enabled: false
     test:
-      enabled: false
-    monitoring:
-      enabled: false
-    gateway:
       enabled: false
