@@ -105,8 +105,6 @@ resource "helm_release" "flux_instance" {
   ]
 }
 
-}
-
 # Create GitOps resources using null_resource to avoid CRD timing issues
 resource "null_resource" "create_gitops_resources" {
   count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
