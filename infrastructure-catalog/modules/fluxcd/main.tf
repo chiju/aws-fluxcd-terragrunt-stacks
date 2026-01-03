@@ -93,5 +93,49 @@ resource "helm_release" "flux_instance" {
   ]
 }
 
-# FluxCD bootstrap will be handled via CI/CD pipeline
-# This avoids CRD availability issues during terraform plan
+# Create FluxInstance for GitOps bootstrap via Helm
+resource "helm_release" "flux_instance" {
+  count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
+
+  name       = "flux-instance"
+  repository = "oci://ghcr.io/controlplaneio-fluxcd/charts"
+  chart      = "flux-instance"
+  version    = "0.38.1"
+  namespace  = "flux-system"
+
+  values = [
+    yamlencode({
+      fluxInstance = {
+        distribution = {
+          version  = "2.x"
+          registry = "ghcr.io/fluxcd"
+        }
+        components = [
+          "source-controller",
+          "kustomize-controller",
+          "helm-controller",
+          "notification-controller"
+        ]
+        cluster = {
+          type          = "kubernetes"
+          multitenant   = false
+          networkPolicy = true
+          domain        = "cluster.local"
+        }
+        sync = {
+          kind       = "GitRepository"
+          provider   = "github"
+          url        = var.git_repo_url
+          ref        = "refs/heads/main"
+          path       = "flux-config/clusters/dev"
+          pullSecret = "flux-system"
+        }
+      }
+    })
+  ]
+
+  depends_on = [
+    helm_release.flux_operator,
+    kubernetes_secret_v1.flux_github_app
+  ]
+}
