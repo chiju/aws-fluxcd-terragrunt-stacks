@@ -6,3 +6,4 @@ resources:
   - istio-gateway
   - kiali
   - cert-manager
+  - cert-manager-config
