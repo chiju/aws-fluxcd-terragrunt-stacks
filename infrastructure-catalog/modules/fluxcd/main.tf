@@ -96,6 +96,7 @@ resource "helm_release" "flux_instance" {
 # Create GitRepository and Kustomizations via Kubernetes manifests
 resource "kubernetes_manifest" "platform_git_repo" {
   count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
+
   manifest = {
     apiVersion = "source.toolkit.fluxcd.io/v1"
     kind       = "GitRepository"
@@ -124,6 +125,7 @@ resource "kubernetes_manifest" "platform_git_repo" {
 
 resource "kubernetes_manifest" "infrastructure_kustomization" {
   count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
+
   manifest = {
     apiVersion = "kustomize.toolkit.fluxcd.io/v1"
     kind       = "Kustomization"
@@ -148,6 +150,7 @@ resource "kubernetes_manifest" "infrastructure_kustomization" {
 
 resource "kubernetes_manifest" "apps_kustomization" {
   count = length(data.aws_eks_cluster.cluster) > 0 ? 1 : 0
+
   manifest = {
     apiVersion = "kustomize.toolkit.fluxcd.io/v1"
     kind       = "Kustomization"
