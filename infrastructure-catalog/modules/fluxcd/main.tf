@@ -16,7 +16,7 @@ resource "helm_release" "flux_operator" {
   # Wait for operator to be ready (includes CRDs)
   wait          = true
   wait_for_jobs = true
-  timeout       = 600  # 10 minutes
+  timeout       = 600 # 10 minutes
 
   values = [
     yamlencode({
