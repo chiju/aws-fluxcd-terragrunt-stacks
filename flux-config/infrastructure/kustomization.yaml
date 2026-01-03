@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - istiod
   - istio-gateway
+  - kiali

@@ -1,0 +1,28 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: kiali-operator
+  namespace: istio-system
+spec:
+  interval: 30m
+  chart:
+    spec:
+      chart: kiali-operator
+      version: "2.20.0"
+      sourceRef:
+        kind: HelmRepository
+        name: kiali
+        namespace: flux-system
+      interval: 12h
+  dependsOn:
+    - name: istiod
+  values:
+    cr:
+      create: true
+      namespace: istio-system
+      spec:
+        auth:
+          strategy: "anonymous"
+        external_services:
+          prometheus:
+            url: "http://prometheus-server:80"
