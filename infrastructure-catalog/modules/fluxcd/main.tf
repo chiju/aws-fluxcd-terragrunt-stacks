@@ -157,7 +157,6 @@ resource "null_resource" "create_gitops_resources" {
   }
 
   depends_on = [
-    helm_release.flux_instance,
-    time_sleep.wait_for_flux_crds
+    helm_release.flux_instance
   ]
 }
