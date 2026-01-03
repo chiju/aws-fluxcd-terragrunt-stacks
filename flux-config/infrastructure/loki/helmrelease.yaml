@@ -28,6 +28,13 @@ spec:
         enabled: true
         storageClass: gp3
         size: 10Gi
+    # Disable other deployment modes
+    backend:
+      replicas: 0
+    read:
+      replicas: 0
+    write:
+      replicas: 0
     chunksCache:
       enabled: false
     resultsCache:
