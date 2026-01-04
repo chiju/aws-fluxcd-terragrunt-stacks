@@ -482,8 +482,15 @@ jobs:
           FLUXCD_APP_INSTALLATION_ID: ${{ secrets.FLUXCD_APP_INSTALLATION_ID }}
           FLUXCD_APP_PRIVATE_KEY: ${{ secrets.FLUXCD_APP_PRIVATE_KEY }}
         run: |
-          echo "Planning platform stack (VPC + EKS)"
-          terragrunt stack run plan --non-interactive --backend-bootstrap
+          echo "🔍 Planning platform stack"
+          CLUSTER_NAME="fluxcd-${{ github.event.inputs.environment || 'dev' }}"
+          if aws eks describe-cluster --name "$CLUSTER_NAME" --region ${{ env.AWS_REGION }} >/dev/null 2>&1; then
+            echo "✅ EKS cluster exists - planning all components"
+            terragrunt stack run plan --non-interactive --backend-bootstrap
+          else
+            echo "⚠️  EKS cluster doesn't exist - excluding FluxCD from plan"
+            terragrunt stack run plan --non-interactive --backend-bootstrap --filter '!fluxcd'
+          fi
 
       - name: Comment PR
         if: github.event_name == 'pull_request'
