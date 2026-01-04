@@ -103,29 +103,6 @@ data:
             enabled: true
             label: grafana_dashboard
             labelValue: "1"
-          - name: Tempo Service Graph
-            uid: tempo-service-graph
-            type: prometheus
-            url: http://monitoring-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090
-            access: proxy
-            isDefault: false
-          - name: CloudWatch
-            type: cloudwatch
-            access: proxy
-            jsonData:
-              defaultRegion: eu-central-1
-              authType: default
-            isDefault: false
-          - name: CloudWatch Logs
-            type: cloudwatch
-            access: proxy
-            jsonData:
-              defaultRegion: eu-central-1
-              authType: default
-              logGroups:
-                - name: "/aws/eks/eks-lab-argocd/cluster"
-                - name: "/aws/vpc/flowlogs/eks-lab-argocd"
-            isDefault: false
       
       # Node exporter with high priority and system node scheduling
       prometheus-node-exporter:
