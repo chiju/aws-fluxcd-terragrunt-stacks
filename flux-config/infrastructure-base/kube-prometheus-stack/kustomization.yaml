@@ -5,9 +5,7 @@ resources:
   - grafana-helmrepository.yaml
   - configmap.yaml
   - helmrelease.yaml
-  - prometheus-virtualservice.yaml
-  - grafana-virtualservice.yaml
-  - alertmanager-virtualservice.yaml
+  # VirtualServices moved to infrastructure layer after Istio CRDs are installed
 
 patches:
   - patch: |
