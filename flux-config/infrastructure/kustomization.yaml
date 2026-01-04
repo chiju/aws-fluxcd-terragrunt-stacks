@@ -9,4 +9,4 @@ resources:
   - tempo
   - loki
   - alloy
-  - cert-manager-certificates.yaml
+  - cert-manager-config
