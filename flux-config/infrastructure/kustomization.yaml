@@ -10,3 +10,4 @@ resources:
   - loki
   - alloy
   - cert-manager-config
+  - monitoring
