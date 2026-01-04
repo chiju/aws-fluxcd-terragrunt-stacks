@@ -116,9 +116,20 @@ resource "null_resource" "create_gitops_resources" {
       # Configure kubectl for EKS cluster
       aws eks update-kubeconfig --region eu-central-1 --name ${var.cluster_name}
       
-      # Wait for FluxCD CRDs to be available
-      kubectl wait --for=condition=established crd/gitrepositories.source.toolkit.fluxcd.io --timeout=300s
-      kubectl wait --for=condition=established crd/kustomizations.kustomize.toolkit.fluxcd.io --timeout=300s
+      # Wait for FluxCD CRDs to be available with retries
+      echo "Waiting for FluxCD CRDs to be installed..."
+      for i in {1..10}; do
+        if kubectl get crd gitrepositories.source.toolkit.fluxcd.io >/dev/null 2>&1 && \
+           kubectl get crd kustomizations.kustomize.toolkit.fluxcd.io >/dev/null 2>&1; then
+          echo "FluxCD CRDs found, proceeding..."
+          break
+        fi
+        echo "Attempt $i: FluxCD CRDs not ready, waiting 30s..."
+        sleep 30
+      done
+      
+      kubectl wait --for=condition=established crd/gitrepositories.source.toolkit.fluxcd.io --timeout=60s
+      kubectl wait --for=condition=established crd/kustomizations.kustomize.toolkit.fluxcd.io --timeout=60s
       
       # Create GitRepository and Kustomization
       kubectl apply -f - <<EOF
