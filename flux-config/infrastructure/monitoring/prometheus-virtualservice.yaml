@@ -1,19 +1,16 @@
 apiVersion: networking.istio.io/v1
 kind: VirtualService
 metadata:
-  name: grafana
+  name: prometheus-virtualservice
   namespace: monitoring
 spec:
   hosts:
-  - grafana.local
+  - prometheus.local
   gateways:
   - istio-system/common-gateway
   http:
-  - match:
-    - uri:
-        prefix: /
-    route:
+  - route:
     - destination:
-        host: monitoring-kube-prometheus-stack-grafana
+        host: monitoring-kube-prometheus-prometheus
         port:
-          number: 80
+          number: 9090
