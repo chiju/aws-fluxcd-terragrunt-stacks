@@ -72,29 +72,31 @@ resource "helm_release" "flux_instance" {
 
   values = [
     yamlencode({
-      distribution = {
-        version  = "2.x"
-        registry = "ghcr.io/fluxcd"
-      }
-      components = [
-        "source-controller",
-        "kustomize-controller",
-        "helm-controller",
-        "notification-controller"
-      ]
-      cluster = {
-        type          = "kubernetes"
-        multitenant   = false
-        networkPolicy = true
-        domain        = "cluster.local"
-      }
-      sync = {
-        kind       = "GitRepository"
-        provider   = "github"
-        url        = var.git_repo_url
-        ref        = "refs/heads/main"
-        path       = "flux-config/clusters/dev"
-        pullSecret = "flux-system"
+      instance = {
+        distribution = {
+          version  = "2.x"
+          registry = "ghcr.io/fluxcd"
+        }
+        components = [
+          "source-controller",
+          "kustomize-controller",
+          "helm-controller",
+          "notification-controller"
+        ]
+        cluster = {
+          type          = "kubernetes"
+          multitenant   = false
+          networkPolicy = true
+          domain        = "cluster.local"
+        }
+        sync = {
+          kind       = "GitRepository"
+          provider   = "github"
+          url        = var.git_repo_url
+          ref        = "refs/heads/main"
+          path       = var.target_path
+          pullSecret = "flux-system"
+        }
       }
     })
   ]
