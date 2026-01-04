@@ -22,7 +22,7 @@ spec:
     crds: CreateReplace
   values:
     grafana:
-      additionalDataSources:
+      additionalDatasources:
         - name: Loki
           type: loki
           uid: loki
