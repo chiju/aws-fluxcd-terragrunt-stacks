@@ -9,7 +9,7 @@ spec:
   interval: 10m
   sourceRef:
     kind: GitRepository
-    name: platform-apps
+    name: flux-system
   path: ./flux-config/apps
   prune: true
   wait: true
