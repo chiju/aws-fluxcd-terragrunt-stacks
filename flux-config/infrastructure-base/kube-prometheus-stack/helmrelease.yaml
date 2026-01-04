@@ -25,11 +25,13 @@ spec:
       additionalDataSources:
         - name: Loki
           type: loki
+          uid: loki
           url: http://loki-system-loki-stack.loki-system.svc.cluster.local:3100
           access: proxy
           isDefault: false
         - name: Tempo
           type: tempo
+          uid: tempo
           url: http://tempo-system-tempo.tempo-system.svc.cluster.local:3200
           access: proxy
           isDefault: false
@@ -37,7 +39,7 @@ spec:
             nodeGraph:
               enabled: true
             serviceMap:
-              datasourceUid: tempo-service-graph
+              datasourceUid: tempo
   valuesFrom:
     - kind: ConfigMap
       name: kube-prometheus-stack-values
