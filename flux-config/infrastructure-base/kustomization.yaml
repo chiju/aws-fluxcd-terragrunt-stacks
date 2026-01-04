@@ -4,3 +4,4 @@ kind: Kustomization
 resources:
   - istio-base
   - kube-prometheus-stack
+  - cert-manager
