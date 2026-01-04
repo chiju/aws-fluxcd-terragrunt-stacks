@@ -489,7 +489,7 @@ jobs:
             terragrunt stack run plan --non-interactive --backend-bootstrap
           else
             echo "⚠️  EKS cluster doesn't exist - excluding FluxCD from plan"
-            terragrunt stack run plan --non-interactive --backend-bootstrap --filter '!fluxcd'
+            terragrunt stack run plan --non-interactive --backend-bootstrap --experiment=filter-flag --filter '!fluxcd'
           fi
 
       - name: Comment PR
